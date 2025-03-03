@@ -42,7 +42,19 @@ It can handle 100k requests for free per day (Cloudflare limits).
 
 # 📜 User guide 
 
-- `/broadcast <Your message>` 
+- Send any text message to search for  books by title in the database (DB).
+- `/add <ISBN10 or ISBN13>` adds the book to the DB by taking the data from Google books API. It shows also the added book's data.
+-  `/del <ISBN10 or ISBN13>` remove the book from the DB. It shows also the deleted book's data.
+-  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don' want to specify it (e.g. ;1234567890123;Hello;;;;;;;;near the duck).
+-  `/settitle <ISBN10 or ISBN13> <New book's title>` changes the book's title to the specified.
+-  `/setauthors <ISBN10 or ISBN13> <New book's authors>` changes the book's authors to the specified.
+-  `/setpublisher <ISBN10 or ISBN13> <New book's publisher>` changes the book's publisher to the specified.
+-  `/setdate <ISBN10 or ISBN13> <New book's publishedDate>` changes the book's publishedDate to the specified.
+-  `/setpages <ISBN10 or ISBN13> <New book's pageCount>` changes the book's pageCount to the specified.
+-  `/setsnippet <ISBN10 or ISBN13> <New book's textSnippet>` changes the book's textSnippet to the specified.
+-  `/setdesc <ISBN10 or ISBN13> <New book's description>` changes the book's description to the specified.
+-  `/setlang <ISBN10 or ISBN13> <New book's language code>` changes the book's language code (e.g., en, it, ..) to the specified.
+-  `/setlocation <ISBN10 or ISBN13> <New book's location>` changes the book's location to the specified.
 
 # 🛠️ To do 
 - Everything.
