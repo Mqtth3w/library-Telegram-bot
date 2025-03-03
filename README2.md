@@ -2,23 +2,19 @@
 # ⚙️ DB setup 
 - Go to workers & pages then to D1 SQL databases.
 - Create a new database. the name doesn't really matter. Instead could be useful to set a location near to "you".
-- Select the database and create a new table called "users" with the following columns and types:
-    - id: text. Set it as primary key.
-    - name: text.
-    - surname: text.
-    - username: text.
-    - start_date: text.
-    - isblocked: text.
-    - language_code: text.
-    - is_bot: text.
-- Create another table called "state" with the following columns and types:
-    - suspended: text.
-    - custom_susp: text.
-    - pinned_usr: text.
-    - pc_user: text.
-    - pc_dest: text.
-    - silent_user: text.
-    - silent_dest: text.
+- Select the database and create a new table called "books" with the following columns and types:
+    - isbn10: text.
+    - isbn13: text. Set it as primary key.
+    - title: text.
+    - authors: text.
+    - publisher: text.
+    - publishedDate: text.
+    - pageCount: integer.
+    - textSnippet: text.
+    - description: text.
+    - language: text.
+    - location: text.
+
 - With the worker selected, go to settings and then bindings. Click add, click D1 database, choose the variable name "db" and select your database by the name you set previously. Then deploy it.
 
 # ℹ️ DB info 
