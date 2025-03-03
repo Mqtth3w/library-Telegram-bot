@@ -18,7 +18,7 @@
 - With the worker selected, go to settings and then bindings. Click add, click D1 database, choose the variable name "db" and select your database by the name you set previously. Then deploy it.
 
 # ℹ️ DB info 
-It uses the Cloudflare D1 service. The database has a free plan but it have some [limitations](https://developers.cloudflare.com/d1/platform/limits/) as the free worker. If you aren't famous the limits are very high, so no worries. Sometimes this version can be slow (we are talking about milliseconds) because Cloudflare gives a limited amout of resources especially in db writing operations so the light version is recommended if you need a really responsive bot.
+It uses the Cloudflare D1 service. The database has a free plan but it have some [limitations](https://developers.cloudflare.com/d1/platform/limits/) as the free worker. Limits are very high, so no worries.
 
 # 🫶🏼 Support 
 Donate to support my projects. 
