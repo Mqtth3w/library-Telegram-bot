@@ -55,6 +55,8 @@ It can handle 100k requests for free per day (Cloudflare limits).
 -  `/setdesc <ISBN10 or ISBN13> <New book's description>` changes the book's description to the specified.
 -  `/setlang <ISBN10 or ISBN13> <New book's language code>` changes the book's language code (e.g., en, it, ..) to the specified.
 -  `/setlocation <ISBN10 or ISBN13> <New book's location>` changes the book's location to the specified.
+-  `/show <ISBN10 or ISBN13>` shows all the book's data if the book exists in DB.
+-  `/count` shows the total number of books in DB.
 
 # 🛠️ To do 
 - Everything.
