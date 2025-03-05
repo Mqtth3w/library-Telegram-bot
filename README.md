@@ -42,7 +42,7 @@ It can handle 100k requests for free per day (Cloudflare limits).
 
 # 📜 User guide 
 
-## Admin
+### 😎 Admin
 An admin can also run user commands.
 - `/add <ISBN10 or ISBN13>` adds the book to the DB by taking the data from Google books API. It shows also the added book's data.
 -  `/del <ISBN10 or ISBN13>` removes the book from the DB. It shows also the deleted book's data.
@@ -57,12 +57,12 @@ An admin can also run user commands.
 -  `/setlang <ISBN10 or ISBN13> <New book's language code>` changes the book's language code (e.g., en, it, ..) to the specified.
 -  `/setlocation <ISBN10 or ISBN13> <New book's location>` changes the book's location to the specified.
 
-## User
+### 😊 User
 - Send any text message to search for  books by title in DB.
 -  `/show <ISBN10 or ISBN13>` shows all the book's data if the book exists in DB.
 -  `/count` shows the total number of books in DB.
 
-## Others
+### 😭 Others
 They can do nothing. If you want everyone able to do read only operations remove the users check ("export default" zone).
 
 # 🛠️ To do 
