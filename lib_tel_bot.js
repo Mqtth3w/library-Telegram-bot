@@ -6,7 +6,9 @@
  *
  */
 
+// userid allowed to run edit commands (an admin is also a user)
 admins = [123456789];
+//userid allowed to run read-only commands
 users = [1265456];
 
 async function sendMessage(env, chatId, text) {
@@ -22,20 +24,41 @@ async function fetchBookData(isbn) {
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
     const data = await response.json();
     if (!data.items) return null;
-    
     const bookInfo = data.items[0].volumeInfo;
     return {
-        title: bookInfo.title,
-        authors: bookInfo.authors,
-        publisher: bookInfo.publisher,
-        publishedDate: bookInfo.publishedDate,
-        pageCount: bookInfo.pageCount,
-        textSnippet: bookInfo.searchInfo?.textSnippet,
-        description: bookInfo.description,
-        language: bookInfo.language,
-        isbn10: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_10")?.identifier,
-        isbn13: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_13")?.identifier
+		isbn10: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_10")?.identifier || "",
+        isbn13: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_13")?.identifier || "",
+        title: bookInfo.title || "",
+        authors: bookInfo.authors.join(", ") || "",
+        publisher: bookInfo.publisher || "",
+        publishedDate: bookInfo.publishedDate || "",
+        pageCount: bookInfo.pageCount || "",
+        textSnippet: bookInfo.searchInfo?.textSnippet || "",
+        description: bookInfo.description || "",
+        language: bookInfo.language || "",
+        thumbnail: bookInfo.imageLinks?.thumbnail || ""
     };
+}
+
+async function addBook(env, chatId, isbn) {
+    const book = await fetchBookData(isbn);
+    if (!book) return await sendMessage(env, chatId, `Book ${isbn} not found.`);
+    await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+		.bind(book.isbn10, book.isbn13, book.title, book.authors, book.publisher, book.publishedDate, 
+			book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail).run();
+    message += `The following book has been found and added\n` +
+			`isbn10: ${book.isbn10}\n` +
+			`isbn13: ${book.isbn13}\n` +
+            `title: ${book.title}\n` +
+            `authors: ${book.authors}\n` +
+            `publisher: ${book.publisher}\n` +
+            `publishedDate: ${book.publishedDate}\n` +
+			`pageCount: ${book.pageCount}\n` +
+			`textSnippet: ${book.textSnippet}\n` + 
+			`description: ${book.description}\n` +
+			`language: ${book.language}\n` +
+			`thumbnail: ${book.thumbnail}\n`;
+	return await sendMessage(env, chatId, message);
 }
 
 /**
@@ -58,14 +81,23 @@ export default {
 				const text = payload.message.text || "";
 				const command = text.split(" ")[0];
 				const args = message.text.substring(command.length).trim();
+				let edit_command = false;
 				if (chatId in admins) {
-					if (command === "/add") await addBook(env, chatId, args);
-					else if (command === "/del") await deleteBook(env, chatId, args);
-					else if (command === "/addmanually") await addManually(env, chatId, args);
-					else if (command.startsWith("/set")) await updateBook(env, chatId, command, args);
-					else await sendMessage(env, chatId, "Incorrect usage, check /help.");
-				} //fix state
-				if (chatId in users || chatId in admins) { //remove the users check and make this a else if you want to allow to everyone to see your books
+					if (command === "/add") {
+						await addBook(env, chatId, args);
+						edit_command = true;
+					} else if (command === "/del") {
+						await deleteBook(env, chatId, args);
+						edit_command = true;
+					} else if (command === "/addmanually") {
+						await addManually(env, chatId, args);
+						edit_command = true;
+					} else if (command.startsWith("/set")) {
+						await updateBook(env, chatId, command, args);
+						edit_command = true;
+					} 
+				} 
+				if (chatId in users || (chatId in admins && edit_command === false)) { //remove the users check and make this a else if you want to allow to everyone to see your books
 					if (message.text) await searchBooks(env, chatId, message.text);
 					else await sendMessage(env, chatId, "Incorrect usage, check /help.");
 				}
@@ -77,14 +109,6 @@ export default {
     return new Response("OK", { status: 200 });
   },
 };
-
-
-async function addBook(env, chatId, isbn) {
-    const book = await fetchBookData(isbn);
-    if (!book) return sendMessage(env, chatId, "Libro non trovato.");
-    await env.BOOKS.put(isbn, JSON.stringify(book));
-    return sendMessage(env, chatId, `Libro aggiunto: ${book.title} di ${book.authors?.join(", ")}`);
-}
 
 async function deleteBook(env, chatId, isbn) {
     const book = await env.BOOKS.get(isbn);
