@@ -11,6 +11,8 @@ const admins = ["123456789"];
 //userid allowed to run read-only commands
 const users = ["1265456"];
 
+const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
+
 /**
  * Sends a text message to a specified user via a Telegram bot.
  *
@@ -160,7 +162,8 @@ async function updateBook(env, chatId, command, args) {
 			"/setsnippet": "textSnippet",
 			"/setdesc": "description",
 			"/setlang": "language",
-			"/setlocation": "location"
+			"/setlocation": "location",
+			"/setthumbnail": "thumbnail"
 		};
 		if (command === "/setpages") {
 			newValue = Number(newValue);
@@ -300,7 +303,9 @@ export default {
 					} 
 				} 
 				if (users.includes(chatId) || (admins.includes(chatId) && edit_command === false)) { //remove the users check and make this a else if you want to allow to everyone to see your books
-					if (command === "/show") await showBook(env, chatId, args);
+					if (command === "/start") await sendMessage(env, chatId, "Hello, welcome to the library!");
+					else if (command === "/help") await sendMessage(env, chatId, `Check the user guide or look at the menu. ${userGuide}`);
+					else if (command === "/show") await showBook(env, chatId, args);
 					else if (command === "/count") await countBooks(env, chatId);
 					else if (text) await searchBooks(env, chatId, text);
 					else await sendMessage(env, chatId, "Incorrect usage, check /help.");
