@@ -7,6 +7,7 @@
  */
 
 admins = [123456789];
+users = [1265456];
 
 async function sendMessage(env, chatId, text) {
     const url = `https://api.telegram.org/bot${env.API_KEY}/sendMessage`;
@@ -54,20 +55,25 @@ export default {
 			const payload = await request.json();
 			if ('message' in payload) {
 				const chatId = payload.message.chat.id.toString();
+				const text = payload.message.text || "";
+				const command = text.split(" ")[0];
+				const args = message.text.substring(command.length).trim();
 				if (chatId in admins) {
-					const text = payload.message.text || "";
-					const command = text.split(" ")[0];
-					const args = message.text.substring(command.length).trim();
 					if (command === "/add") await addBook(env, chatId, args);
 					else if (command === "/del") await deleteBook(env, chatId, args);
 					else if (command === "/addmanually") await addManually(env, chatId, args);
 					else if (command.startsWith("/set")) await updateBook(env, chatId, command, args);
-					else if (message.text) await searchBooks(env, chatId, message.text);
+					else await sendMessage(env, chatId, "Incorrect usage, check /help.");
+				} //fix state
+				if (chatId in users || chatId in admins) { //remove the users check and make this a else if you want to allow to everyone to see your books
+					if (message.text) await searchBooks(env, chatId, message.text);
 					else await sendMessage(env, chatId, "Incorrect usage, check /help.");
 				}
 				else {
 					await sendMessage(env, chatId, "Sorry, the library is closed, and will stay closed for a long time.");
 				}
+			}
+		}
     return new Response("OK", { status: 200 });
   },
 };
