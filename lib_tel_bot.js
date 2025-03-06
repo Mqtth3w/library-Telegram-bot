@@ -473,5 +473,5 @@ async function showBook(env, chatId, isbn) {
  */
 async function countBooks(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT COUNT(*) AS tot FROM books`).all();
-	await sendMessage(env, chatId, `Total books: ${results[0]["tot"]}.`);
+	await sendMessage(env, chatId, `${languages[lang]["totbooks"]}: ${results[0]["tot"]}.`);
 }
