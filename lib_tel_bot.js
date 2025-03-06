@@ -34,33 +34,34 @@ export default {
 				const command = text.split(" ")[0];
 				const args = text.substring(command.length).trim();
 				let edit_command = false;
-				if (admins.includes(chatId)) {
-					if (command === "/add") {
-						await addBook(env, chatId, args);
-						edit_command = true;
-					} else if (command === "/del") {
-						await deleteBook(env, chatId, args);
-						edit_command = true;
-					} else if (command === "/addmanually") {
-						await addManually(env, chatId, args);
-						edit_command = true;
-					} else if (command.startsWith("/set")) {
-						await updateBook(env, chatId, command, args);
-						edit_command = true;
-					} 
-				} 
-				if (users.includes(chatId) || (admins.includes(chatId) && edit_command === false)) { //remove the users check and make this a else if you want to allow to everyone to see your books
-					if (command === "/start") await sendMessage(env, chatId, "Hello, welcome to the library!");
-					else if (command === "/help") await sendMessage(env, chatId, `Check the user guide or look at the menu. ${userGuide}`);
-					else if (command === "/show") await showBook(env, chatId, args);
-					else if (command === "/count") await countBooks(env, chatId);
-					else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
-					else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
-					else if (text) await searchBooks(env, chatId, "/searchtitle", text);
-					else await sendMessage(env, chatId, "Incorrect usage, check /help.");
-				}
-				else {
+				if (!users.includes(chatId) && !admins.includes(chatId)) {
 					await sendMessage(env, chatId, "Sorry, the library is closed, and will stay closed for a long time.");
+				} else {
+					if (admins.includes(chatId)) {
+						if (command === "/add") {
+							await addBook(env, chatId, args);
+							edit_command = true;
+						} else if (command === "/del") {
+							await deleteBook(env, chatId, args);
+							edit_command = true;
+						} else if (command === "/addmanually") {
+							await addManually(env, chatId, args);
+							edit_command = true;
+						} else if (command.startsWith("/set")) {
+							await updateBook(env, chatId, command, args);
+							edit_command = true;
+						} 
+					} 
+					if (users.includes(chatId) || (admins.includes(chatId) && edit_command === false)) { //remove the users check and make this a else if you want to allow to everyone to see your books
+						if (command === "/start") await sendMessage(env, chatId, "Hello, welcome to the library!");
+						else if (command === "/help") await sendMessage(env, chatId, `Check the user guide or look at the menu. ${userGuide}`);
+						else if (command === "/show") await showBook(env, chatId, args);
+						else if (command === "/count") await countBooks(env, chatId);
+						else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
+						else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
+						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
+						else await sendMessage(env, chatId, "Incorrect usage, check /help.");
+					}
 				}
 			}
 		}
@@ -338,7 +339,7 @@ async function showBook(env, chatId, isbn) {
 	let finalIsbn10 = (isbn && isValidISBN10(isbn)) ? isbn : "";
     let finalIsbn13 = (isbn && isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
-		const { results } = await env.db.prepare("SELECT * FROM books WHERE sbn13 = ?")
+		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 									.bind(finalIsbn13).all();
 		if (results.length === 0) return await sendMessage(env, chatId, `No books found with ISBN ${isbn}.`);
 		let message = "";
