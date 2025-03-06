@@ -93,23 +93,44 @@ async function sendMessage(env, chatId, text) {
  * @returns {Promise<object|null>} The book data.
  */
 async function fetchBookData(isbn) {
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-    const data = await response.json();
-    if (!data.items) return null;
-    const bookInfo = data.items[0].volumeInfo;
-    return {
-		isbn10: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_10")?.identifier || "",
-        isbn13: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_13")?.identifier || "",
-        title: bookInfo.title || "",
-        authors: bookInfo.authors.join(", ") || "",
-        publisher: bookInfo.publisher || "",
-        publishedDate: bookInfo.publishedDate || "",
-        pageCount: bookInfo.pageCount || "",
-        textSnippet: bookInfo.searchInfo?.textSnippet || "",
-        description: bookInfo.description || "",
-        language: bookInfo.language || "",
-        thumbnail: bookInfo.imageLinks?.thumbnail || ""
-    };
+    const responseGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const dataGoogle = await responseGoogle.json();
+    if (dataGoogle.items) {
+		const bookInfo = dataGoogle.items[0].volumeInfo;
+		return {
+			isbn10: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_10")?.identifier || "",
+			isbn13: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_13")?.identifier || "",
+			title: bookInfo.title || "",
+			authors: bookInfo.authors.join(", ") || "",
+			publisher: bookInfo.publisher.join(", ") || "",
+			publishedDate: bookInfo.publishedDate || "",
+			pageCount: bookInfo.pageCount || "",
+			textSnippet: bookInfo.searchInfo?.textSnippet || "",
+			description: bookInfo.description || "",
+			language: bookInfo.language || "",
+			thumbnail: bookInfo.imageLinks?.thumbnail || ""
+		};
+	}
+	
+	const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
+    const dataOpenLibrary = await responseOpenLibrary.json();
+    if (dataOpenLibrary) {
+        return {
+            isbn10: dataOpenLibrary.isbn_10?.[0] ? dataOpenLibrary.isbn_10?.[0] : "",
+            isbn13: dataOpenLibrary.isbn_13?.[0] ? dataOpenLibrary.isbn_13?.[0] : "",
+            title: dataOpenLibrary.title || "",
+            authors: dataOpenLibrary.authors?.map(a => a.name).join(", ") || "",
+            publisher: dataOpenLibrary.publishers?.join(", ") || "",
+            publishedDate: dataOpenLibrary.publish_date || "",
+            pageCount: dataOpenLibrary.number_of_pages || "",
+            textSnippet: "",
+            description: "",
+            language: dataOpenLibrary.languages?.map(l => l.key.split("/").pop()).join(", ") || "",
+            thumbnail: "",
+        };
+    }
+	
+	return null;
 }
 
 /**
@@ -157,8 +178,8 @@ async function convertISBN10toISBN13(isbn10) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function addBook(env, chatId, isbn) {
-	let finalIsbn10 = (isbn && isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? convertISBN10toISBN13(finalIsbn10) : "");
+	let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
+    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 								.bind(finalIsbn13).all();
@@ -176,7 +197,7 @@ async function addBook(env, chatId, isbn) {
 			const book = await fetchBookData(finalIsbn10 ? isbn : finalIsbn13);
 			if (!book) return await sendMessage(env, chatId, `Book ${isbn} not found.`);
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
-				.bind(book.isbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
+				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
 					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail).run();
 			let message = `The following book has been found and added\n` +
 					`ISBN10: ${book.isbn10}\n` +
@@ -205,8 +226,8 @@ async function addBook(env, chatId, isbn) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function deleteBook(env, chatId, isbn) {
-    let finalIsbn10 = (isbn && isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? convertISBN10toISBN13(finalIsbn10) : "");
+    let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
+    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
 		await env.db.prepare("DELETE FROM books WHERE isbn13 = ?").bind(finalIsbn13).run();
 		await sendMessage(env, chatId, `Book ${isbn} deleted (if exists).`);
@@ -223,11 +244,11 @@ async function deleteBook(env, chatId, isbn) {
  */
 async function addManually(env, chatId, args) {
     const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail] = args.split(";");
-	let finalIsbn10 = (isbn10 && isValidISBN10(isbn10)) ? isbn10 : "";
-    let finalIsbn13 = (isbn13 && isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? convertISBN10toISBN13(finalIsbn10) : "");
+	let finalIsbn10 = (isbn10 && await isValidISBN10(isbn10)) ? isbn10 : "";
+    let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
-								.bind(isbn13.length === 13 ? isbn13 : convertISBN10toISBN13(isbn10)).all();
+								.bind(finalIsbn13).all();
 		if (results.length > 0) {
 			let message = `Book already present.` +
 							`ISBN10: ${results[0].isbn10}\n` +
@@ -243,7 +264,7 @@ async function addManually(env, chatId, args) {
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", 
 				pages, textSnippet || "", description || "", language || "", location || "", thumbnail || "").run();
-			await sendMessage(env, chatId, `Book ISBN10 ${isbn10}, ISBN13 ${isbn13} added.`);
+			await sendMessage(env, chatId, `Book ISBN10 ${finalIsbn10}, ISBN13 ${finalIsbn13} added.`);
 		}
 	} else await sendMessage(env, chatId, "You must provide a valid ISBN10 or ISBN13.");
 }
@@ -259,8 +280,8 @@ async function addManually(env, chatId, args) {
  */
 async function updateBook(env, chatId, command, args) {
     let [isbn, newValue] = args.split(" ", 2);
-    let finalIsbn10 = (isbn && isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? convertISBN10toISBN13(finalIsbn10) : "");
+    let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
+    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
 		const fieldMap = {
 			"/settitle": "title",
@@ -274,6 +295,12 @@ async function updateBook(env, chatId, command, args) {
 			"/setlocation": "location",
 			"/setthumbnail": "thumbnail"
 		};
+		if (!fieldMap[command]) {
+			return await sendMessage(env, chatId, "Invalid command.");
+		}
+		if (!newValue) {
+			return await sendMessage(env, chatId, "Please provide a new value to update.");
+		}
 		if (command === "/setpages") {
 			newValue = Number(newValue);
 			if (isNaN(newValue) || newValue <= 0) {
@@ -336,8 +363,8 @@ async function searchBooks(env, chatId, command, data) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function showBook(env, chatId, isbn) {
-	let finalIsbn10 = (isbn && isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? convertISBN10toISBN13(finalIsbn10) : "");
+	let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
+    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 									.bind(finalIsbn13).all();
