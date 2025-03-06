@@ -169,7 +169,7 @@ async function fetchBookData(isbn) {
 			isbn13: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_13")?.identifier || "",
 			title: bookInfo.title || "",
 			authors: bookInfo.authors.join(", ") || "",
-			publisher: bookInfo.publisher.join(", ") || "",
+			publisher: bookInfo.publisher || "",
 			publishedDate: bookInfo.publishedDate || "",
 			pageCount: bookInfo.pageCount || "",
 			textSnippet: bookInfo.searchInfo?.textSnippet || "",
@@ -178,7 +178,6 @@ async function fetchBookData(isbn) {
 			thumbnail: bookInfo.imageLinks?.thumbnail || ""
 		};
 	}
-	
 	const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
     const dataOpenLibrary = await responseOpenLibrary.json();
     if (dataOpenLibrary) {
@@ -196,7 +195,6 @@ async function fetchBookData(isbn) {
             thumbnail: "",
         };
     }
-	
 	return null;
 }
 
