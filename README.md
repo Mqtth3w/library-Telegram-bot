@@ -62,12 +62,14 @@ An admin can also run user commands.
 - Send any text message to search for  books by title in DB.
 -  `/show <ISBN10 or ISBN13>` shows all the book's data if the book exists in DB.
 -  `/count` shows the total number of books in DB.
+-  `/searchauthor <Author name>` shows books in DB by the author name.
+-  `/searchpublisher <Publisher name>` shows books in DB by the publisher name.
 
 ### 😭 Others
 They can do nothing. If you want everyone able to do read only operations remove the users check ("export default" zone).
 
 # 🛠️ To do 
-- Search books by authors, publisher, published date.
+- Search books by published date.
 - Web interface.
 
 # 💭 Discussion 
