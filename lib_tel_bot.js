@@ -12,6 +12,73 @@ const admins = ["123456789"];
 const users = ["1265456"];
 
 const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
+const lang = "en"; //SET YOURS
+const languages = {
+  "it": {
+    "start": "Ciao, benvenuto nella biblioteca!",
+    "help": "Controlla la guida utente o guarda il menu",
+    "libraryClosed": "Mi dispiace, la biblioteca è chiusa e rimarrà chiusa per molto tempo",
+    "incorrectUsage": "Uso non corretto, controlla /help",
+	"alreadyPresent": "Libro già presente",
+    "bookAdded": "Il libro è stato aggiunto",
+	"isbnError": "Usa un numero ISBN-10 o ISBN-13",
+    "bookDeleted": "Il libro è stato eliminato (se esiste)",
+    "bookNotFound": "Il libro non è stato trovato",
+	"totbooks": "Libri totali",
+	"totbmatched": "Totale libri abbinati",
+	"newVal": "Per aggiornare devi fornire un nuovo valore",
+	"invalidcmd": "Comando non valido",
+	"pageErr": "Numero di pagine non valido, deve essere un numero positivo",
+	"update": "Se il libro esiste è stato aggiornato",
+	"noBooks": "Nessun libro trovato",
+	"bookFound": "Libro trovato",
+	"isbn10": "ISBN-10",
+	"isbn13": "ISBN-13",
+	"title": "Titolo",
+	"authors": "Autori",
+	"publisher": "Editore",
+	"publishedDate": "Data di publicazione",
+	"pageCount": "Numero di pagine",
+	"textSnippet": "Frammento di testo",
+	"description": "Descrizione",
+	"language": "Lingua",
+	"location": "Posizione",
+	"thumbnail": "Immagine miniatura"
+  },
+  "en": {
+    "start": "Hello, welcome to the library!",
+    "help": "Check the user guide or look at the menu",
+    "libraryClosed": "Sorry, the library is closed, and will stay closed for a long time",
+    "incorrectUsage": "Incorrect usage, check /help",
+	"alreadyPresent": "Book already present",
+    "bookAdded": "The book has been added",
+	"isbnError": "Use a ISBN-10 or ISBN-13 number",
+    "bookDeleted": "The book has been deleted (if exists)",
+    "bookNotFound": "Book not found",
+	"totbooks": "Total books",
+	"totbmatched": "Total books matched",
+	"newVal": "To update you need to provide a new value",
+	"invalidcmd": "Invalid command",
+	"pageErr": "Invalid page count. It must be a positive number",
+	"update": "If the book exists then it has been updated",
+	"noBooks": "No books found",
+	"bookFound": "Book found",
+	"isbn10": "ISBN-10",
+	"isbn13": "ISBN-13",
+	"title": "Title",
+	"authors": "Authors",
+	"publisher": "Publisher",
+	"publishedDate": "Published date",
+	"pageCount": "Page count",
+	"textSnippet": "text snippet",
+	"description": "Description",
+	"language": "Language",
+	"location": "Location",
+	"thumbnail": "Thumbnail image"
+  }
+  // You can add other languages here...
+};
+
 
 /** 
  * Handles incoming requests to the Cloudflare Worker.
@@ -35,7 +102,7 @@ export default {
 				const args = text.substring(command.length).trim();
 				let edit_command = false;
 				if (!users.includes(chatId) && !admins.includes(chatId)) {
-					await sendMessage(env, chatId, "Sorry, the library is closed, and will stay closed for a long time.");
+					await sendMessage(env, chatId, languages[lang]["libraryClosed"]);
 				} else {
 					if (admins.includes(chatId)) {
 						if (command === "/add") {
@@ -53,14 +120,14 @@ export default {
 						} 
 					} 
 					if (users.includes(chatId) || (admins.includes(chatId) && edit_command === false)) { //remove the users check and make this a else if you want to allow to everyone to see your books
-						if (command === "/start") await sendMessage(env, chatId, "Hello, welcome to the library!");
-						else if (command === "/help") await sendMessage(env, chatId, `Check the user guide or look at the menu. ${userGuide}`);
+						if (command === "/start") await sendMessage(env, chatId, languages[lang]["start"]);
+						else if (command === "/help") await sendMessage(env, chatId, `${languages[lang]["help"]} ${userGuide}`);
 						else if (command === "/show") await showBook(env, chatId, args);
 						else if (command === "/count") await countBooks(env, chatId);
 						else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
 						else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
 						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
-						else await sendMessage(env, chatId, "Incorrect usage, check /help.");
+						else await sendMessage(env, chatId, languages[lang]["incorrectUsage"]);
 					}
 				}
 			}
@@ -87,7 +154,7 @@ async function sendMessage(env, chatId, text) {
 }
 
 /** 
- * Search for a book through ISBN and Google books API.
+ * Search for a book by ISBN through Google books API or Open Library API.
  * 
  * @param {string|Promise<string>} isbn - The book ISBN.
  * @returns {Promise<object|null>} The book data.
@@ -184,37 +251,37 @@ async function addBook(env, chatId, isbn) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 								.bind(finalIsbn13).all();
 		if (results.length > 0) {
-			let message = `Book already present.` +
-							`ISBN10: ${results[0].isbn10}\n` +
-							`ISBN13: ${results[0].isbn13}\n` +
-							`title: ${results[0].title}\n` +
-							`authors: ${results[0].authors}\n` +
-							`publisher: ${results[0].publisher}\n` +
-							`publishedDate: ${results[0].publishedDate}\n\n`;
+			let message = `${languages[lang]["alreadyPresent"]}` +
+							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
+							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+							`${languages[lang]["title"]}: ${results[0].title}\n` +
+							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
+							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
+							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n\n`;
 			await sendMessage(env, chatId, message);
 		}
 		else {
 			const book = await fetchBookData(finalIsbn10 ? isbn : finalIsbn13);
-			if (!book) return await sendMessage(env, chatId, `Book ${isbn} not found.`);
+			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
 					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail).run();
-			let message = `The following book has been found and added\n` +
-					`ISBN10: ${book.isbn10}\n` +
-					`ISBN13: ${book.isbn13}\n` +
-					`title: ${book.title}\n` +
-					`authors: ${book.authors}\n` +
-					`publisher: ${book.publisher}\n` +
-					`publishedDate: ${book.publishedDate}\n` +
-					`pageCount: ${book.pageCount}\n` +
-					`textSnippet: ${book.textSnippet}\n` + 
-					`description: ${book.description}\n` +
-					`language: ${book.language}\n` +
-					`location: \n` +
-					`thumbnail: ${book.thumbnail}\n`;
+			let message = `${languages[lang]["bookAdded"]}\n` + 
+					`${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
+					`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
+					`${languages[lang]["title"]}: ${book.title}\n` +
+					`${languages[lang]["authors"]}: ${book.authors}\n` +
+					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
+					`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+					`${languages[lang]["pageCount"]}: ${book.pageCount}\n` +
+					`${languages[lang]["textSnippet"]}: ${book.textSnippet}\n` + 
+					`${languages[lang]["description"]}: ${book.description}\n` +
+					`${languages[lang]["language"]}: ${book.language}\n` +
+					`${languages[lang]["location"]}: \n` +
+					`${languages[lang]["thumbnail"]}: ${book.thumbnail}\n`;
 			await sendMessage(env, chatId, message);
 		}
-	} else await sendMessage(env, chatId, "Use a ISBN10 or ISBN13 number.");
+	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
 /** 
@@ -230,8 +297,8 @@ async function deleteBook(env, chatId, isbn) {
     let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
 		await env.db.prepare("DELETE FROM books WHERE isbn13 = ?").bind(finalIsbn13).run();
-		await sendMessage(env, chatId, `Book ${isbn} deleted (if exists).`);
-	} else await sendMessage(env, chatId, "Use a ISBN10 or ISBN13 number.");
+		await sendMessage(env, chatId, `${languages[lang]["bookDeleted"]}`);
+	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
 /** 
@@ -250,13 +317,13 @@ async function addManually(env, chatId, args) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 								.bind(finalIsbn13).all();
 		if (results.length > 0) {
-			let message = `Book already present.` +
-							`ISBN10: ${results[0].isbn10}\n` +
-							`ISBN13: ${results[0].isbn13}\n` +
-							`title: ${results[0].title}\n` +
-							`authors: ${results[0].authors}\n` +
-							`publisher: ${results[0].publisher}\n` +
-							`publishedDate: ${results[0].publishedDate}\n\n`;
+			let message = `${languages[lang]["alreadyPresent"]}` +
+							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
+							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+							`${languages[lang]["title"]}: ${results[0].title}\n` +
+							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
+							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
+							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n\n`;
 			await sendMessage(env, chatId, message);
 		} else {
 			let pages = Number(pageCount);
@@ -264,9 +331,9 @@ async function addManually(env, chatId, args) {
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", 
 				pages, textSnippet || "", description || "", language || "", location || "", thumbnail || "").run();
-			await sendMessage(env, chatId, `Book ISBN10 ${finalIsbn10}, ISBN13 ${finalIsbn13} added.`);
+			await sendMessage(env, chatId, `.`);
 		}
-	} else await sendMessage(env, chatId, "You must provide a valid ISBN10 or ISBN13.");
+	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
 /** 
@@ -296,21 +363,21 @@ async function updateBook(env, chatId, command, args) {
 			"/setthumbnail": "thumbnail"
 		};
 		if (!fieldMap[command]) {
-			return await sendMessage(env, chatId, "Invalid command.");
+			return await sendMessage(env, chatId, `${languages[lang]["invalidcmd"]}`);
 		}
 		if (!newValue) {
-			return await sendMessage(env, chatId, "Please provide a new value to update.");
+			return await sendMessage(env, chatId, `${languages[lang]["newVal"]}`);
 		}
 		if (command === "/setpages") {
 			newValue = Number(newValue);
 			if (isNaN(newValue) || newValue <= 0) {
-				return await sendMessage(env, chatId, "Invalid page count. It must be a positive number.");
+				return await sendMessage(env, chatId, `${languages[lang]["pageErr"]}`);
 			}
 		}
 		await env.db.prepare(`UPDATE books SET ${fieldMap[command]} = ? WHERE isbn13 = ?`)
 			.bind(newValue, finalIsbn13).run();
-		await sendMessage(env, chatId, "If the book exists then it has been updated.");
-    } else await sendMessage(env, chatId, "You must provide a valid ISBN10 or ISBN13, and a new value.");
+		await sendMessage(env, chatId, `${languages[lang]["update"]}`);
+    } else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
 /** 
@@ -330,22 +397,22 @@ async function searchBooks(env, chatId, command, data) {
 		};
     const { results } = await env.db.prepare(`SELECT ISBN10, ISBN13, title, authors, publisher, publishedDate FROM books WHERE ${fieldMap[command]} LIKE ?`)
 								.bind(`%${data}%`).all();
-    if (results.length === 0) return await sendMessage(env, chatId, `No ${fieldMap[command]} contains ${data}.`);
+    if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
 	let message = "";
 	const batchSize = 25;
 	for (let i = 0; i < results.length; i++) {
 		const book = results[i];
 		total++;
-		message += `ISBN10: ${book.isbn10}\n` +
-			`ISBN13: ${book.isbn13}\n` +
-            `title: ${book.title}\n` +
-            `authors: ${book.authors}\n` +
-            `publisher: ${book.publisher}\n` +
-            `publishedDate: ${book.publishedDate}\n\n`;
+		message += `${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
+			`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
+			`${languages[lang]["title"]}: ${book.title}\n` +
+			`${languages[lang]["authors"]}: ${book.authors}\n` +
+			`${languages[lang]["publisher"]}: ${book.publisher}\n` +
+			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n\n`;
 		if ((total % batchSize === 0) || (i === results.length - 1)) {
 			if (i === results.length - 1) {
-				message += `total books matched: ${total}.`;
+				message += `${languages[lang]["totbmatched"]}: ${total}.`;
 			}
 			await sendMessage(env, chatId, message);
 			await new Promise(resolve => setTimeout(resolve, 30));
@@ -368,33 +435,33 @@ async function showBook(env, chatId, isbn) {
     if (finalIsbn13) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 									.bind(finalIsbn13).all();
-		if (results.length === 0) return await sendMessage(env, chatId, `No books found with ISBN ${isbn}.`);
+		if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
 		let message = "";
 		let total = 0;
 		const batchSize = 1;
 		for (let i = 0; i < results.length; i++) {
 			const book = results[i];
 			total++;
-			message += `The following book has been found\n` +
-				`ISBN10: ${book.isbn10}\n` +
-				`ISBN13: ${book.isbn13}\n` +
-				`title: ${book.title}\n` +
-				`authors: ${book.authors}\n` +
-				`publisher: ${book.publisher}\n` +
-				`publishedDate: ${book.publishedDate}\n` +
-				`pageCount: ${book.pageCount}\n` +
-				`textSnippet: ${book.textSnippet}\n` + 
-				`description: ${book.description}\n` +
-				`language: ${book.language}\n` +
-				`location: ${book.location}\n` +
-				`thumbnail: ${book.thumbnail}\n`;
+			message += `${languages[lang]["bookFound"]}\n` + 
+					`${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
+					`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
+					`${languages[lang]["title"]}: ${book.title}\n` +
+					`${languages[lang]["authors"]}: ${book.authors}\n` +
+					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
+					`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+					`${languages[lang]["pageCount"]}: ${book.pageCount}\n` +
+					`${languages[lang]["textSnippet"]}: ${book.textSnippet}\n` + 
+					`${languages[lang]["description"]}: ${book.description}\n` +
+					`${languages[lang]["language"]}: ${book.language}\n` +
+					`${languages[lang]["location"]}: ${book.location}\n` +
+					`${languages[lang]["thumbnail"]}: ${book.thumbnail}\n`;
 			if ((total % batchSize === 0) || (i === results.length - 1)) {
 				await sendMessage(env, chatId, message);
 				await new Promise(resolve => setTimeout(resolve, 30));
 				message = ""; 
 			}
 		}
-	} else await sendMessage(env, chatId, "You must provide a valid ISBN10 or ISBN13.");
+	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
 /** 
