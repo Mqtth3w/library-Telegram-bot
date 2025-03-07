@@ -24,8 +24,8 @@ const languages = {
 	"isbnError": "Usa un numero ISBN-10 o ISBN-13",
     "bookDeleted": "Il libro è stato eliminato (se esiste)",
     "bookNotFound": "Il libro non è stato trovato",
-	"totbooks": "Libri totali",
-	"totbmatched": "Totale libri abbinati",
+	"totBooks": "Libri totali",
+	"totBmatched": "Totale libri abbinati",
 	"newVal": "Per aggiornare devi fornire un nuovo valore",
 	"invalidcmd": "Comando non valido",
 	"pageErr": "Numero di pagine non valido, deve essere un numero positivo",
@@ -55,8 +55,8 @@ const languages = {
 	"isbnError": "Use a ISBN-10 or ISBN-13 number",
     "bookDeleted": "The book has been deleted (if exists)",
     "bookNotFound": "Book not found",
-	"totbooks": "Total books",
-	"totbmatched": "Total books matched",
+	"totBooks": "Total books",
+	"totBmatched": "Total books matched",
 	"newVal": "To update you need to provide a new value",
 	"invalidcmd": "Invalid command",
 	"pageErr": "Invalid page count. It must be a positive number",
@@ -410,7 +410,7 @@ async function searchBooks(env, chatId, command, data) {
 			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n\n`;
 		if ((total % batchSize === 0) || (i === results.length - 1)) {
 			if (i === results.length - 1) {
-				message += `${languages[lang]["totbmatched"]}: ${total}.`;
+				message += `${languages[lang]["totBmatched"]}: ${total}`;
 			}
 			await sendMessage(env, chatId, message);
 			await new Promise(resolve => setTimeout(resolve, 30));
@@ -434,31 +434,19 @@ async function showBook(env, chatId, isbn) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 									.bind(finalIsbn13).all();
 		if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
-		let message = "";
-		let total = 0;
-		const batchSize = 1;
-		for (let i = 0; i < results.length; i++) {
-			const book = results[i];
-			total++;
-			message += `${languages[lang]["bookFound"]}\n` + 
-					`${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
-					`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
-					`${languages[lang]["title"]}: ${book.title}\n` +
-					`${languages[lang]["authors"]}: ${book.authors}\n` +
-					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
-					`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
-					`${languages[lang]["pageCount"]}: ${book.pageCount}\n` +
-					`${languages[lang]["textSnippet"]}: ${book.textSnippet}\n` + 
-					`${languages[lang]["description"]}: ${book.description}\n` +
-					`${languages[lang]["language"]}: ${book.language}\n` +
-					`${languages[lang]["location"]}: ${book.location}\n` +
-					`${languages[lang]["thumbnail"]}: ${book.thumbnail}\n`;
-			if ((total % batchSize === 0) || (i === results.length - 1)) {
-				await sendMessage(env, chatId, message);
-				await new Promise(resolve => setTimeout(resolve, 30));
-				message = ""; 
-			}
-		}
+		let message = `${languages[lang]["bookFound"]}\n` + 
+			`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
+			`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+			`${languages[lang]["title"]}: ${results[0].title}\n` +
+			`${languages[lang]["authors"]}: ${results[0].authors}\n` +
+			`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
+			`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` +
+			`${languages[lang]["pageCount"]}: ${results[0].pageCount}\n` +
+			`${languages[lang]["textSnippet"]}: ${results[0].textSnippet}\n` + 
+			`${languages[lang]["description"]}: ${results[0].description}\n` +
+			`${languages[lang]["language"]}: ${results[0].language}\n` +
+			`${languages[lang]["location"]}: ${results[0].location}\n` +
+			`${languages[lang]["thumbnail"]}: ${results[0].thumbnail}\n`;
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
@@ -471,5 +459,5 @@ async function showBook(env, chatId, isbn) {
  */
 async function countBooks(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT COUNT(*) AS tot FROM books`).all();
-	await sendMessage(env, chatId, `${languages[lang]["totbooks"]}: ${results[0]["tot"]}.`);
+	await sendMessage(env, chatId, `${languages[lang]["totBooks"]}: ${results[0]["tot"]}`);
 }
