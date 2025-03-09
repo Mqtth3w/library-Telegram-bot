@@ -46,7 +46,7 @@ It can handle 100k requests for free per day (Cloudflare limits).
 An admin can also run user commands.
 - `/add <ISBN10 or ISBN13>` adds the book to the DB by taking the data from Google books API or Open Library API. It shows also the added book's data.
 -  `/del <ISBN10 or ISBN13>` removes the book from the DB. It shows also the deleted book's data.
--  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don' want to specify it (e.g. ;1234567890123;Hello;;;;;;;;near the duck;).
+-  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don't want to specify it (e.g. ;1234567890123;Hello;;;;;;;;near the duck;).
 -  `/settitle <ISBN10 or ISBN13> <New book's title>` changes the book's title to the specified.
 -  `/setauthors <ISBN10 or ISBN13> <New book's authors>` changes the book's authors to the specified.
 -  `/setpublisher <ISBN10 or ISBN13> <New book's publisher>` changes the book's publisher to the specified.
@@ -70,12 +70,14 @@ They can do nothing. If you want everyone able to do read only operations remove
 
 # 🛠️ To do 
 - Search books by published date.
+- Favorites hadling.
+- Add edition book's info.
 - Web interface.
 
 # 💭 Discussion 
 For any comment or to request a new feature you can either use the [Discussions](https://github.com/Mqtth3w/library-Telegram-bot/discussions) section or contact me through the [bot](https://t.me/Mqtth3w_support_bot).
 
-# 🫶🏼 Support 
+#🫶🏼 Support 
 Donate to support my projects. 
 - Crypto & others: Use the command `/support` in the [bot](https://t.me/Mqtth3w_support_bot).
 - [Sponsor](https://github.com/sponsors/Mqtth3w).
