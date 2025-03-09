@@ -15,9 +15,10 @@ It can handle 100k requests for free per day (Cloudflare limits).
 - Go to workers & pages then create a new worker so deploy it.
 - Click edit so replace the code with the content of [lib_tel_bot.js](./lib_tel_bot.js). Deploy it.
 - Click configure worker, go to setting, go to variables.
-- Add the variable API_KEY. Which is the bot api token.
-- Add the variable SECRET_TOKEN. Generate its value through the script [gen_token.py](./gen_token.py). You can also type it with your hands (1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_` and `-` are allowed). Save it for future use.
-- Encrypt all variables and save.
+- Add the variable API_KEY (secret type). Which is the bot api token.
+- Add the variable SECRET_TOKEN (secret type). Generate its value through the script [gen_token.py](./gen_token.py). You can also type it with your hands (1-256 characters. Only characters `A-Z`, `a-z`, `0-9`, `_` and `-` are allowed). Save it for future use.
+- **Optionally** you can add a variable GBOOKS_API_KEY (secret type), which is a Google API key restricted to the Books API service. It let you do more requests, generally you don't need it unless you plan to do thousands of requests per day.
+- Encrypt (set the secrect type!) all variables and save.
 
 - ### DB setup
   Follow the instructions in the DB setup [file](./README2.md).
@@ -70,6 +71,7 @@ They can do nothing. If you want everyone able to do read only operations remove
 
 # 🛠️ To do 
 - Search books by published date.
+- Search and add a book by title and ISBN, because sometime a request only by ISBN doesn't work even if they have the book.
 - Favorites hadling.
 - Add edition book's info.
 - Web interface.
