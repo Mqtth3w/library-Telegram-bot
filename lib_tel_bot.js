@@ -374,7 +374,7 @@ async function addManually(env, chatId, args) {
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", 
 				pages, textSnippet || "", description || "", language || "", location || "", thumbnail || "").run();
-			await sendMessage(env, chatId, `.`);
+			await sendMessage(env, chatId, `${languages[lang]["bookAdded"]}`);
 		}
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
@@ -438,7 +438,7 @@ async function searchBooks(env, chatId, command, data) {
 			"/searchpublisher": "publisher",
 			"/searchtitle": "title"
 		};
-    const { results } = await env.db.prepare(`SELECT ISBN10, ISBN13, title, authors, publisher, publishedDate FROM books WHERE ${fieldMap[command]} LIKE ?`)
+    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, title, authors, publisher, publishedDate FROM books WHERE ${fieldMap[command]} LIKE ?`)
 								.bind(`%${data}%`).all();
     if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
@@ -492,6 +492,7 @@ async function showBook(env, chatId, isbn) {
 			`${languages[lang]["language"]}: ${results[0].language}\n` +
 			`${languages[lang]["location"]}: ${results[0].location}\n` +
 			`${languages[lang]["thumbnail"]}: ${results[0].thumbnail}\n`;
+		await sendMessage(env, chatId, message);
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
 
