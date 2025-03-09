@@ -12,7 +12,7 @@ const admins = ["123456789"];
 const users = ["1265456"];
 
 const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
-const lang = "en"; //SET YOURS
+const lang = "it"; //SET YOURS
 const languages = {
   "it": {
     "start": "Ciao, benvenuto nella biblioteca!",
@@ -160,9 +160,11 @@ async function sendMessage(env, chatId, text) {
  * @returns {Promise<object|null>} The book data.
  */
 async function fetchBookData(isbn) {
-    const responseGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
-    const dataGoogle = await responseGoogle.json();
-    if (dataGoogle.items) {
+	const responseGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`, {
+			headers: { "Accept": "application/json" }
+		});
+	const dataGoogle = await responseGoogle.json();
+	if (dataGoogle.items) {
 		const bookInfo = dataGoogle.items[0].volumeInfo;
 		return {
 			isbn10: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_10")?.identifier || "",
@@ -178,51 +180,72 @@ async function fetchBookData(isbn) {
 			thumbnail: bookInfo.imageLinks?.thumbnail || ""
 		};
 	}
-	const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
-    const dataOpenLibrary = await responseOpenLibrary.json();
-    if (dataOpenLibrary) {
-        return {
-            isbn10: dataOpenLibrary.isbn_10?.[0] ? dataOpenLibrary.isbn_10?.[0] : "",
-            isbn13: dataOpenLibrary.isbn_13?.[0] ? dataOpenLibrary.isbn_13?.[0] : "",
-            title: dataOpenLibrary.title || "",
-            authors: dataOpenLibrary.authors?.map(a => a.name).join(", ") || "",
-            publisher: dataOpenLibrary.publishers?.join(", ") || "",
-            publishedDate: dataOpenLibrary.publish_date || "",
-            pageCount: dataOpenLibrary.number_of_pages || "",
-            textSnippet: "",
-            description: "",
-            language: dataOpenLibrary.languages?.map(l => l.key.split("/").pop()).join(", ") || "",
-            thumbnail: "",
-        };
+	try { // The genius behind OpenLibrary decided it should return an HTML page when a book isn't found. Brilliant!
+		const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`, {
+				headers: { "Accept": "application/json" }
+			});
+		const dataOpenLibrary = await responseOpenLibrary.json(); // Ah!
+		if (dataOpenLibrary) {
+			return {
+				isbn10: dataOpenLibrary.isbn_10?.[0] ? dataOpenLibrary.isbn_10?.[0] : "",
+				isbn13: dataOpenLibrary.isbn_13?.[0] ? dataOpenLibrary.isbn_13?.[0] : "",
+				title: dataOpenLibrary.title || "",
+				authors: dataOpenLibrary.authors?.map(a => a.name).join(", ") || "",
+				publisher: dataOpenLibrary.publishers?.join(", ") || "",
+				publishedDate: dataOpenLibrary.publish_date || "",
+				pageCount: dataOpenLibrary.number_of_pages || "",
+				textSnippet: "",
+				description: "",
+				language: dataOpenLibrary.languages?.map(l => l.key.split("/").pop()).join(", ") || "",
+				thumbnail: "",
+			};
+		}
+	} catch (err) {
+		console.error("Error fetching book data:", err.message);
+        return null;
     }
 	return null;
 }
 
 /**
- * Check if an ISBN10 is valid.
+ * Check if an ISBN-10 is valid.
  *
- * @param {string} isbn - The ISBN10 to validate.
+ * @param {string} isbn - The ISBN-10 to validate.
  * @returns {Promise<boolean>} Resolves with true if valid, false otherwise.
  */
 async function isValidISBN10(isbn) {
-	return /^[0-9]{9}[0-9X]$/.test(isbn);
+	if (!/^[0-9]{9}[0-9X]$/.test(isbn)) return false;
+	let sum = 0;
+    for (let i = 0; i < 9; i++) {
+        sum += (i + 1) * parseInt(isbn[i]);
+    }
+    let checksum = isbn[9].toUpperCase();
+    sum += checksum === "X" ? 10 * 10 : parseInt(checksum) * 10;
+    return sum % 11 === 0;
 }
 
 /**
- * Checks if an ISBN13 is valid.
+ * Checks if an ISBN-13 is valid.
  *
- * @param {string} isbn - The ISBN13 to validate.
+ * @param {string} isbn - The ISBN-13 to validate.
  * @returns {Promise<boolean>} A promise that resolves to true if valid, false otherwise.
  */
 async function isValidISBN13(isbn) {
-    return /^[0-9]{13}$/.test(isbn);
+    if (!/^[0-9]{13}$/.test(isbn)) return false;
+	let sum = 0;
+    for (let i = 0; i < 12; i++) {
+        let digit = parseInt(isbn[i]);
+        sum += (i % 2 === 0 ? digit : digit * 3);
+    }
+    let checksum = (10 - (sum % 10)) % 10;
+    return checksum === parseInt(isbn[12]);
 }
 
 /** 
- * Convert a ISBN10 to ISBN13.
+ * Convert a ISBN-10 to ISBN-13.
  * 
- * @param {string} isbn10 - The book ISBN10.
- * @returns {Promise<string>} The ISBN13.
+ * @param {string} isbn10 - The book ISBN-10.
+ * @returns {Promise<string>} The ISBN-13.
  */
 async function convertISBN10toISBN13(isbn10) {
     let isbn13Base = "978" + isbn10.slice(0, 9);
@@ -233,6 +256,28 @@ async function convertISBN10toISBN13(isbn10) {
     let checkDigit = (10 - (sum % 10)) % 10;
     return isbn13Base + checkDigit;
 }
+
+/** 
+ * Find and validate a ISBN in a text.
+ * 
+ * @param {string} text - The text to be analyzed.
+ * @returns {Promise<string|null>} Eventually the ISBN found.
+
+async function findISBN(text) {
+    const regex = /\b(?:ISBN(?:-1[03])?:?\s*)?(\d{9}[\dXx]|\d{13})\b/g;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+        let isbn = match[1].replace(/[-\s]/g, "");
+
+        if (isValidISBN10(isbn)) {
+            return isbn;
+        }
+		else if (isValidISBN13(isbn)) {
+            return isbn;
+        }
+    }
+    return null;
+} */
 
 /** 
  * Add a book to the DB by ISBN taking its data online.
