@@ -156,11 +156,12 @@ async function sendMessage(env, chatId, text) {
 /** 
  * Search for a book by ISBN through Google books API or Open Library API.
  * 
+ * @param {object} env - The environment object containing runtime information, such as bindings.
  * @param {string|Promise<string>} isbn - The book ISBN.
  * @returns {Promise<object|null>} The book data.
  */
-async function fetchBookData(isbn) {
-	const responseGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`, {
+async function fetchBookData(env, isbn) {
+	const responseGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}${env.GBOOKS_API_KEY ? "&key=" + env.GBOOKS_API_KEY : ""}`, {
 			headers: { "Accept": "application/json" }
 		});
 	const dataGoogle = await responseGoogle.json();
@@ -294,7 +295,7 @@ async function addBook(env, chatId, isbn) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 								.bind(finalIsbn13).all();
 		if (results.length > 0) {
-			let message = `${languages[lang]["alreadyPresent"]}` +
+			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
 							`${languages[lang]["title"]}: ${results[0].title}\n` +
@@ -304,7 +305,7 @@ async function addBook(env, chatId, isbn) {
 			await sendMessage(env, chatId, message);
 		}
 		else {
-			const book = await fetchBookData(finalIsbn10 ? isbn : finalIsbn13);
+			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
@@ -360,7 +361,7 @@ async function addManually(env, chatId, args) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
 								.bind(finalIsbn13).all();
 		if (results.length > 0) {
-			let message = `${languages[lang]["alreadyPresent"]}` +
+			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
 							`${languages[lang]["title"]}: ${results[0].title}\n` +
