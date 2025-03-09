@@ -12,7 +12,7 @@ const admins = ["123456789"];
 const users = ["1265456"];
 
 const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
-const lang = "it"; //SET YOURS
+const lang = "en"; //SET YOURS
 const languages = {
   "it": {
     "start": "Ciao, benvenuto nella biblioteca!",
