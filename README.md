@@ -77,7 +77,7 @@ They can do nothing. If you want everyone able to do read only operations remove
 # 💭 Discussion 
 For any comment or to request a new feature you can either use the [Discussions](https://github.com/Mqtth3w/library-Telegram-bot/discussions) section or contact me through the [bot](https://t.me/Mqtth3w_support_bot).
 
-#🫶🏼 Support 
+#🫶 🏼 Support 
 Donate to support my projects. 
 - Crypto & others: Use the command `/support` in the [bot](https://t.me/Mqtth3w_support_bot).
 - [Sponsor](https://github.com/sponsors/Mqtth3w).
