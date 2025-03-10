@@ -293,8 +293,8 @@ async function addBook(env, chatId, args) {
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
 					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail).run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
-					`${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
-					`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
+					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
+					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
 					`${languages[lang]["title"]}: ${book.title}\n` +
 					`${languages[lang]["authors"]}: ${book.authors}\n` +
 					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
