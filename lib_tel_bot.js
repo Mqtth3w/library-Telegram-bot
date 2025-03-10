@@ -183,10 +183,12 @@ async function fetchBookData(env, isbn, title) {
 			thumbnail: bookInfo.imageLinks?.thumbnail || ""
 		};
 	}
-	try { // The genius behind OpenLibrary decided it should return an HTML page when a book isn't found. Brilliant!
-		const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`, {
-				headers: { "Accept": "application/json" }
-			});
+	// The genius behind OpenLibrary decided it should return an HTML page when a book isn't found. Brilliant!
+	const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`, {
+			headers: { "Accept": "application/json" }
+		});
+	const contentType = responseOpenLibrary.headers.get("content-type");
+	if (contentType && contentType.includes("application/json")) {	
 		const dataOpenLibrary = await responseOpenLibrary.json(); // Ah!
 		if (dataOpenLibrary) {
 			return {
@@ -203,10 +205,7 @@ async function fetchBookData(env, isbn, title) {
 				thumbnail: "",
 			};
 		}
-	} catch (err) {
-		console.error("Error fetching book data:", err.message);
-        return null;
-    }
+	}
 	return null;
 }
 
