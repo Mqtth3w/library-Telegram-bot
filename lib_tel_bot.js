@@ -158,10 +158,12 @@ async function sendMessage(env, chatId, text) {
  * 
  * @param {object} env - The environment object containing runtime information, such as bindings.
  * @param {string|Promise<string>} isbn - The book ISBN.
+ * @param {string} title - The book's title.
  * @returns {Promise<object|null>} The book data.
  */
-async function fetchBookData(env, isbn) {
-	const responseGoogle = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}${env.GBOOKS_API_KEY ? "&key=" + env.GBOOKS_API_KEY : ""}`, {
+async function fetchBookData(env, isbn, title) {
+	const url = `https://www.googleapis.com/books/v1/volumes?q=${title ? title + "+" : ""}isbn:${isbn}${env.GBOOKS_API_KEY ? "&key=" + env.GBOOKS_API_KEY : ""}`;
+	const responseGoogle = await fetch(url, {
 			headers: { "Accept": "application/json" }
 		});
 	const dataGoogle = await responseGoogle.json();
@@ -259,36 +261,15 @@ async function convertISBN10toISBN13(isbn10) {
 }
 
 /** 
- * Find and validate a ISBN in a text.
- * 
- * @param {string} text - The text to be analyzed.
- * @returns {Promise<string|null>} Eventually the ISBN found.
-
-async function findISBN(text) {
-    const regex = /\b(?:ISBN(?:-1[03])?:?\s*)?(\d{9}[\dXx]|\d{13})\b/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-        let isbn = match[1].replace(/[-\s]/g, "");
-
-        if (isValidISBN10(isbn)) {
-            return isbn;
-        }
-		else if (isValidISBN13(isbn)) {
-            return isbn;
-        }
-    }
-    return null;
-} */
-
-/** 
  * Add a book to the DB by ISBN taking its data online.
  * 
  * @param {object} env - The environment object containing runtime information, such as bindings.
  * @param {number|string} chatId - The chat ID of the user who requested the service.
- * @param {string} isbn - The book ISBN.
+ * @param {string} args - The book's ISBN and optionally also the book's title.
  * @returns {Promise<void>} This function does not return a value.
  */
-async function addBook(env, chatId, isbn) {
+async function addBook(env, chatId, args) {
+	const isbn = args.split(" ")[0];
 	let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
     let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
@@ -305,7 +286,8 @@ async function addBook(env, chatId, isbn) {
 			await sendMessage(env, chatId, message);
 		}
 		else {
-			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13);
+			const title = args.substring(isbn.length).trim().replace(/\s+/g, "+");
+			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13, title);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
