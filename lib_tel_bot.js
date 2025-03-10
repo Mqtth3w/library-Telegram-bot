@@ -371,7 +371,8 @@ async function addManually(env, chatId, args) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function updateBook(env, chatId, command, args) {
-    let [isbn, newValue] = args.split(" ", 2);
+    let [isbn, ...newValue] = args.split(" ");
+	newValue = newValue.join(" ");
     let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
     let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
