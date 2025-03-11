@@ -47,7 +47,7 @@ It can handle 100k requests for free per day (Cloudflare limits).
 An admin can also run user commands.
 - `/add <ISBN10 or ISBN13> <Optionally the book's title>` adds the book to the DB by taking the data from Google books API or Open Library API. It shows also the added book's data. *A query with also the title has more probability of success*.
 -  `/del <ISBN10 or ISBN13>` removes the book from the DB. It shows also the deleted book's data.
--  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don't want to specify it (e.g. ;1234567890123;Hello;;;;;;;;near the duck;).
+-  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>;<price>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don't want to specify it (e.g. ;1234567890123;Hello;;;;;;;;room a, library 3;;).
 -  `/settitle <ISBN10 or ISBN13> <New book's title>` changes the book's title to the specified.
 -  `/setauthors <ISBN10 or ISBN13> <New book's authors>` changes the book's authors to the specified.
 -  `/setpublisher <ISBN10 or ISBN13> <New book's publisher>` changes the book's publisher to the specified.
@@ -57,6 +57,7 @@ An admin can also run user commands.
 -  `/setdesc <ISBN10 or ISBN13> <New book's description>` changes the book's description to the specified.
 -  `/setlang <ISBN10 or ISBN13> <New book's language code>` changes the book's language code (e.g., en, it, ..) to the specified.
 -  `/setlocation <ISBN10 or ISBN13> <New book's location>` changes the book's location to the specified.
+-  `/setprice <ISBN10 or ISBN13> <New book's price>` changes the book's price to the specified.
 -  `/setthumbnail <ISBN10 or ISBN13> <Thumbnail image link>` changes the book's thumbnail to the specified.
 
 ### 😊 User
@@ -64,6 +65,7 @@ An admin can also run user commands.
 -  `/show <ISBN10 or ISBN13>` shows all the book's data if the book exists in DB.
 -  `/count` shows the total number of books in DB.
 -  `/pagecount` shows the total number of pages in DB.
+-  `/totalvalue` shows the total value (prices' sum) of books in DB.
 -  `/help` shows a link to this user guide.
 -  `/searchauthor <Author name>` shows books in DB by the author name.
 -  `/searchpublisher <Publisher name>` shows books in DB by the publisher name.
