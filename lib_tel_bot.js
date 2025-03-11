@@ -32,6 +32,7 @@ const languages = {
 	"update": "Se il libro esiste è stato aggiornato",
 	"noBooks": "Nessun libro trovato",
 	"bookFound": "Libro trovato",
+	"totPages": "Pagine totali",
 	"isbn10": "ISBN-10",
 	"isbn13": "ISBN-13",
 	"title": "Titolo",
@@ -63,6 +64,7 @@ const languages = {
 	"update": "If the book exists then it has been updated",
 	"noBooks": "No books found",
 	"bookFound": "Book found",
+	"totPages": "Total pages",
 	"isbn10": "ISBN-10",
 	"isbn13": "ISBN-13",
 	"title": "Title",
@@ -124,6 +126,7 @@ export default {
 						else if (command === "/help") await sendMessage(env, chatId, `${languages[lang]["help"]} ${userGuide}`);
 						else if (command === "/show") await showBook(env, chatId, args);
 						else if (command === "/count") await countBooks(env, chatId);
+						else if (command === "/pagecount") await countPages(env, chatId);
 						else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
 						else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
 						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
@@ -489,4 +492,16 @@ async function showBook(env, chatId, isbn) {
 async function countBooks(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT COUNT(*) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totBooks"]}: ${results[0]["tot"]}`);
+}
+
+/** 
+ * Count the total number of pages of books in DB.
+ * 
+ * @param {object} env - The environment object containing runtime information, such as bindings.
+ * @param {number|string} chatId - The chat ID of the user who requested the service.
+ * @returns {Promise<void>} This function does not return a value.
+ */
+async function countPages(env, chatId) {
+	const { results } = await env.db.prepare(`SELECT SUM(pageCount) AS tot FROM books`).all();
+	await sendMessage(env, chatId, `${languages[lang]["totPages"]}: ${results[0]["tot"]}`);
 }
