@@ -63,6 +63,7 @@ An admin can also run user commands.
 - Send any text message to search for  books by title in DB.
 -  `/show <ISBN10 or ISBN13>` shows all the book's data if the book exists in DB.
 -  `/count` shows the total number of books in DB.
+-  `/pagecount` shows the total number of pages in DB.
 -  `/help` shows a link to this user guide.
 -  `/searchauthor <Author name>` shows books in DB by the author name.
 -  `/searchpublisher <Publisher name>` shows books in DB by the publisher name.
