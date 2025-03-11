@@ -25,10 +25,12 @@ const languages = {
     "bookDeleted": "Il libro è stato eliminato (se esiste)",
     "bookNotFound": "Il libro non è stato trovato",
 	"totBooks": "Libri totali",
+	"totPrice": "Valore totale",
 	"totBmatched": "Totale libri abbinati",
 	"newVal": "Per aggiornare devi fornire un nuovo valore",
 	"invalidcmd": "Comando non valido",
 	"pageErr": "Numero di pagine non valido, deve essere un numero positivo",
+	"priceErr": "Prezzo non valido, deve essere un numero maggiore o uguale a zero es: 5.0",
 	"update": "Se il libro esiste è stato aggiornato",
 	"noBooks": "Nessun libro trovato",
 	"bookFound": "Libro trovato",
@@ -44,6 +46,7 @@ const languages = {
 	"description": "Descrizione",
 	"language": "Lingua",
 	"location": "Posizione",
+	"price": "Prezzo",
 	"thumbnail": "Immagine miniatura"
   },
   "en": {
@@ -57,10 +60,12 @@ const languages = {
     "bookDeleted": "The book has been deleted (if exists)",
     "bookNotFound": "Book not found",
 	"totBooks": "Total books",
+	"totPrice": "Total value",
 	"totBmatched": "Total books matched",
 	"newVal": "To update you need to provide a new value",
 	"invalidcmd": "Invalid command",
 	"pageErr": "Invalid page count. It must be a positive number",
+	"priceErr": "Invalid price. It must be greater than or equal to zero ex: 5.0",
 	"update": "If the book exists then it has been updated",
 	"noBooks": "No books found",
 	"bookFound": "Book found",
@@ -76,6 +81,7 @@ const languages = {
 	"description": "Description",
 	"language": "Language",
 	"location": "Location",
+	"price": "Price",
 	"thumbnail": "Thumbnail image"
   }
   // You can add other languages here...
@@ -127,6 +133,7 @@ export default {
 						else if (command === "/show") await showBook(env, chatId, args);
 						else if (command === "/count") await countBooks(env, chatId);
 						else if (command === "/pagecount") await countPages(env, chatId);
+						else if (command === "/totalvalue") await totValue(env, chatId);
 						else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
 						else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
 						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
@@ -291,9 +298,9 @@ async function addBook(env, chatId, args) {
 			const title = args.substring(isbn.length).trim().replace(/\s+/g, "+");
 			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13, title);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
-					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail).run();
+					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, "").run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
 					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
 					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
@@ -306,6 +313,7 @@ async function addBook(env, chatId, args) {
 					`${languages[lang]["description"]}: ${book.description}\n` +
 					`${languages[lang]["language"]}: ${book.language}\n` +
 					`${languages[lang]["location"]}: \n` +
+					`${languages[lang]["price"]}: \n` +
 					`${languages[lang]["thumbnail"]}: ${book.thumbnail}\n`;
 			await sendMessage(env, chatId, message);
 		}
@@ -338,7 +346,7 @@ async function deleteBook(env, chatId, isbn) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function addManually(env, chatId, args) {
-    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail] = args.split(";");
+    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price] = args.split(";");
 	let finalIsbn10 = (isbn10 && await isValidISBN10(isbn10)) ? isbn10 : "";
     let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13) {
@@ -356,9 +364,9 @@ async function addManually(env, chatId, args) {
 		} else {
 			let pages = Number(pageCount);
 			if (isNaN(pages) || pages <= 0) pages = 1;
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
 			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", 
-				pages, textSnippet || "", description || "", language || "", location || "", thumbnail || "").run();
+				pages, textSnippet || "", description || "", language || "", location || "", thumbnail || "", price || "").run();
 			await sendMessage(env, chatId, `${languages[lang]["bookAdded"]}`);
 		}
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -389,6 +397,7 @@ async function updateBook(env, chatId, command, args) {
 			"/setdesc": "description",
 			"/setlang": "language",
 			"/setlocation": "location",
+			"/setprice": "price",
 			"/setthumbnail": "thumbnail"
 		};
 		if (!fieldMap[command]) {
@@ -401,6 +410,11 @@ async function updateBook(env, chatId, command, args) {
 			newValue = Number(newValue);
 			if (isNaN(newValue) || newValue <= 0) {
 				return await sendMessage(env, chatId, `${languages[lang]["pageErr"]}`);
+			}
+		} else if (command === "/setprice") {
+			newValue = parseFloat(newValue);
+			if (isNaN(newValue) || newValue < 0) {
+				return await sendMessage(env, chatId, `${languages[lang]["priceErr"]}`);
 			}
 		}
 		await env.db.prepare(`UPDATE books SET ${fieldMap[command]} = ? WHERE isbn13 = ?`)
@@ -477,6 +491,7 @@ async function showBook(env, chatId, isbn) {
 			`${languages[lang]["description"]}: ${results[0].description}\n` +
 			`${languages[lang]["language"]}: ${results[0].language}\n` +
 			`${languages[lang]["location"]}: ${results[0].location}\n` +
+			`${languages[lang]["price"]}: ${results[0].price}\n` +
 			`${languages[lang]["thumbnail"]}: ${results[0].thumbnail}\n`;
 		await sendMessage(env, chatId, message);
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -504,4 +519,16 @@ async function countBooks(env, chatId) {
 async function countPages(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(pageCount) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPages"]}: ${results[0]["tot"]}`);
+}
+
+/** 
+ * Calculate the total price in DB.
+ * 
+ * @param {object} env - The environment object containing runtime information, such as bindings.
+ * @param {number|string} chatId - The chat ID of the user who requested the service.
+ * @returns {Promise<void>} This function does not return a value.
+ */
+async function totValue(env, chatId) {
+	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
+	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
 }
