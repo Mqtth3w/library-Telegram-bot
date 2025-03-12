@@ -11,7 +11,7 @@ It can handle 100k requests for free per day (Cloudflare limits).
  The deployment only takes less than 10 minutes.
   
 - Create a new bot on telegram with [@BotFather](https://telegram.me/BotFather). Save the api token for future use.
-- Create a Cloudflare account and click add a website or application.
+- Create a Cloudflare account.
 - Go to workers & pages then create a new worker so deploy it.
 - Click edit so replace the code with the content of [lib_tel_bot.js](./lib_tel_bot.js). Deploy it.
 - Click configure worker, go to setting, go to variables.
@@ -46,7 +46,7 @@ It can handle 100k requests for free per day (Cloudflare limits).
 ### 😎 Admin
 An admin can also run user commands.
 - `/add <ISBN10 or ISBN13> <Optionally the book's title>` adds the book to the DB by taking the data from Google books API or Open Library API. It shows also the added book's data. *A query with also the title has more probability of success*.
--  `/del <ISBN10 or ISBN13>` removes the book from the DB. It shows also the deleted book's data.
+-  `/del <ISBN10 or ISBN13>` removes the book from the DB.
 -  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>;<price>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don't want to specify it (e.g. ;1234567890123;Hello;;;;;;;;room a, library 3;;).
 -  `/settitle <ISBN10 or ISBN13> <New book's title>` changes the book's title to the specified.
 -  `/setauthors <ISBN10 or ISBN13> <New book's authors>` changes the book's authors to the specified.
