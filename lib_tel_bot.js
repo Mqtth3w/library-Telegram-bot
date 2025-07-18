@@ -11,8 +11,9 @@ const admins = ["123456789"];
 //userid allowed to run read-only commands
 const users = ["1265456"];
 
+
 const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
-const lang = "en"; //SET YOURS
+const lang = "it"; //SET YOURS
 const languages = {
   "it": {
     "start": "Ciao, benvenuto nella biblioteca!",
@@ -21,7 +22,7 @@ const languages = {
     "incorrectUsage": "Uso non corretto, controlla /help",
 	"alreadyPresent": "Libro già presente",
     "bookAdded": "Il libro è stato aggiunto",
-	"isbnError": "Usa un numero ISBN-10 o ISBN-13",
+	"isbnError": "Usa un numero ISBN-10, ISBN-13 o ISSN",
     "bookDeleted": "Il libro è stato eliminato (se esiste)",
     "bookNotFound": "Il libro non è stato trovato",
 	"totBooks": "Libri totali",
@@ -37,6 +38,7 @@ const languages = {
 	"totPages": "Pagine totali",
 	"isbn10": "ISBN-10",
 	"isbn13": "ISBN-13",
+	"issn": "ISSN",
 	"title": "Titolo",
 	"authors": "Autori",
 	"publisher": "Editore",
@@ -47,7 +49,10 @@ const languages = {
 	"language": "Lingua",
 	"location": "Posizione",
 	"price": "Prezzo",
-	"thumbnail": "Immagine miniatura"
+	"thumbnail": "Immagine miniatura",
+	"isFavorite": "Nei preferiti",
+	"true": "Si",
+	"false": "No"
   },
   "en": {
     "start": "Hello, welcome to the library!",
@@ -56,7 +61,7 @@ const languages = {
     "incorrectUsage": "Incorrect usage, check /help",
 	"alreadyPresent": "Book already present",
     "bookAdded": "The book has been added",
-	"isbnError": "Use a ISBN-10 or ISBN-13 number",
+	"isbnError": "Use a ISBN-10, ISBN-13 or ISSN number",
     "bookDeleted": "The book has been deleted (if exists)",
     "bookNotFound": "Book not found",
 	"totBooks": "Total books",
@@ -72,6 +77,7 @@ const languages = {
 	"totPages": "Total pages",
 	"isbn10": "ISBN-10",
 	"isbn13": "ISBN-13",
+	"issn": "ISSN",
 	"title": "Title",
 	"authors": "Authors",
 	"publisher": "Publisher",
@@ -82,7 +88,10 @@ const languages = {
 	"language": "Language",
 	"location": "Location",
 	"price": "Price",
-	"thumbnail": "Thumbnail image"
+	"thumbnail": "Thumbnail image",
+	"isFavorite": "In favorites",
+	"true": "Yes",
+	"false": "No"
   }
   // You can add other languages here...
 };
@@ -125,7 +134,13 @@ export default {
 						} else if (command.startsWith("/set")) {
 							await updateBook(env, chatId, command, args);
 							edit_command = true;
-						} 
+						} else if (command.startsWith("/addfav")) {
+							await updateBook(env, chatId, command, args);
+							edit_command = true;
+						} else if (command.startsWith("/delfav")) {
+							await updateBook(env, chatId, command, args);
+							edit_command = true;
+						}
 					} 
 					if (users.includes(chatId) || (admins.includes(chatId) && edit_command === false)) { //remove the users check and make this a else if you want to allow to everyone to see your books
 						if (command === "/start") await sendMessage(env, chatId, languages[lang]["start"]);
@@ -136,6 +151,7 @@ export default {
 						else if (command === "/totalvalue") await totValue(env, chatId);
 						else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
 						else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
+						else if (command === "/showfav") await searchBooks(env, chatId, command, "true");
 						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
 						else await sendMessage(env, chatId, languages[lang]["incorrectUsage"]);
 					}
@@ -193,7 +209,7 @@ async function fetchBookData(env, isbn, title) {
 			thumbnail: bookInfo.imageLinks?.thumbnail || ""
 		};
 	}
-	// The genius behind OpenLibrary decided it should return an HTML page when a book isn't found. Brilliant!
+	// The genius behind OpenLibrary decided it should return an HTML page when a book isn't found.
 	const responseOpenLibrary = await fetch(`https://openlibrary.org/isbn/${isbn}.json`, {
 			headers: { "Accept": "application/json" }
 		});
@@ -253,6 +269,21 @@ async function isValidISBN13(isbn) {
     return checksum === parseInt(isbn[12]);
 }
 
+/**
+ * Checks if an ISSN is valid.
+ *
+ * @param {string} issn - The ISSN to validate.
+ * @returns {Promise<boolean>} A promise that resolves to true if valid, false otherwise.
+ */
+async function isValidISSN(issn) {
+    if (!/^[0-9]{8}$/.test(issn)) return false;
+	let sum = 0;
+	for (let i = 8; i >= 2; i--) {
+		sum += Number(issn[8-i]) * i;
+	}
+	return 11 - sum % 11 == Number(issn[7]);
+}
+
 /** 
  * Convert a ISBN-10 to ISBN-13.
  * 
@@ -288,26 +319,30 @@ async function addBook(env, chatId, args) {
 			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+							`${languages[lang]["issn"]}: ${results[0].issn}\n` +
 							`${languages[lang]["title"]}: ${results[0].title}\n` +
 							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
-							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n\n`;
+							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` +
+							`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n\n`;
 			await sendMessage(env, chatId, message);
 		}
 		else {
 			const title = args.substring(isbn.length).trim().replace(/\s+/g, "+");
 			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13, title);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
-					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, "").run();
+					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, "", "false").run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
 					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
 					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
+					`${languages[lang]["issn"]}: ${book.issn}\n` +
 					`${languages[lang]["title"]}: ${book.title}\n` +
 					`${languages[lang]["authors"]}: ${book.authors}\n` +
 					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
 					`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+					`${languages[lang]["isFavorite"]}: ${languages[lang][book.isFavorite]}\n` +
 					`${languages[lang]["pageCount"]}: ${book.pageCount}\n` +
 					`${languages[lang]["textSnippet"]}: ${book.textSnippet}\n` + 
 					`${languages[lang]["description"]}: ${book.description}\n` +
@@ -321,18 +356,18 @@ async function addBook(env, chatId, args) {
 }
 
 /** 
- * Delete a book by the specified ISBN from the DB.
+ * Delete a book by the specified ISBN/ISSN from the DB.
  * 
  * @param {object} env - The environment object containing runtime information, such as bindings.
  * @param {number|string} chatId - The chat ID of the user who requested the service.
- * @param {string} isbn - The book ISBN.
+ * @param {string} code - The book code.
  * @returns {Promise<void>} This function does not return a value.
  */
-async function deleteBook(env, chatId, isbn) {
-    let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13) {
-		await env.db.prepare("DELETE FROM books WHERE isbn13 = ?").bind(finalIsbn13).run();
+async function deleteBook(env, chatId, code) {
+    let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
+    let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
+    if (finalIsbn13 || await isValidISSN(code)) {
+		await env.db.prepare("DELETE FROM books WHERE isbn13 = ? OR issn = ?").bind(finalIsbn13, code).run();
 		await sendMessage(env, chatId, `${languages[lang]["bookDeleted"]}`);
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
@@ -346,27 +381,29 @@ async function deleteBook(env, chatId, isbn) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function addManually(env, chatId, args) {
-    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price] = args.split(";");
+    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price, issn, isfav] = args.split(";");
 	let finalIsbn10 = (isbn10 && await isValidISBN10(isbn10)) ? isbn10 : "";
     let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13) {
-		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
-								.bind(finalIsbn13).all();
+	if (finalIsbn13 || await isValidISSN(issn)) {
+		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
+								.bind(finalIsbn13, issn).all();
 		if (results.length > 0) {
 			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+							`${languages[lang]["issn"]}: ${results[0].issn}\n` +
 							`${languages[lang]["title"]}: ${results[0].title}\n` +
 							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
-							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n\n`;
+							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` + 
+							`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n\n`;
 			await sendMessage(env, chatId, message);
 		} else {
 			let pages = Number(pageCount);
 			if (isNaN(pages) || pages <= 0) pages = 1;
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)")
-			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", 
-				pages, textSnippet || "", description || "", language || "", location || "", thumbnail || "", price || "").run();
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", pages, textSnippet || "", 
+				description || "", language || "", location || "", thumbnail || "", price || "", issn || "", isfav || "false").run();
 			await sendMessage(env, chatId, `${languages[lang]["bookAdded"]}`);
 		}
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -382,11 +419,11 @@ async function addManually(env, chatId, args) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function updateBook(env, chatId, command, args) {
-    let [isbn, ...newValue] = args.split(" ");
+    let [code, ...newValue] = args.split(" ");
 	newValue = newValue.join(" ");
-    let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13) {
+    let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
+    let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
+    if (finalIsbn13 || await isValidISSN(code)) {
 		const fieldMap = {
 			"/settitle": "title",
 			"/setauthors": "authors",
@@ -398,12 +435,14 @@ async function updateBook(env, chatId, command, args) {
 			"/setlang": "language",
 			"/setlocation": "location",
 			"/setprice": "price",
-			"/setthumbnail": "thumbnail"
+			"/setthumbnail": "thumbnail",
+			"/addfav": "isFavorite",
+			"/delfav": "isFavorite"
 		};
 		if (!fieldMap[command]) {
 			return await sendMessage(env, chatId, `${languages[lang]["invalidcmd"]}`);
 		}
-		if (!newValue) {
+		if (!newValue && !command.endsWith("fav")) {
 			return await sendMessage(env, chatId, `${languages[lang]["newVal"]}`);
 		}
 		if (command === "/setpages") {
@@ -416,9 +455,13 @@ async function updateBook(env, chatId, command, args) {
 			if (isNaN(newValue) || newValue < 0) {
 				return await sendMessage(env, chatId, `${languages[lang]["priceErr"]}`);
 			}
+		} else if (command === "/addfav") {
+			newValue = "true";
+		} else if (command === "/delfav") {
+			newValue = "false";
 		}
-		await env.db.prepare(`UPDATE books SET ${fieldMap[command]} = ? WHERE isbn13 = ?`)
-			.bind(newValue, finalIsbn13).run();
+		await env.db.prepare(`UPDATE books SET ${fieldMap[command]} = ? WHERE isbn13 = ? OR issn = ?`)
+			.bind(newValue, finalIsbn13, code).run();
 		await sendMessage(env, chatId, `${languages[lang]["update"]}`);
     } else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
@@ -436,9 +479,10 @@ async function searchBooks(env, chatId, command, data) {
 	const fieldMap = {
 			"/searchauthor": "authors",
 			"/searchpublisher": "publisher",
-			"/searchtitle": "title"
+			"/searchtitle": "title",
+			"/showfav": "isFavorite"
 		};
-    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, title, authors, publisher, publishedDate FROM books WHERE ${fieldMap[command]} LIKE ?`)
+    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, title, authors, publisher, publishedDate, isFavorite FROM books WHERE ${fieldMap[command]} LIKE ?`)
 								.bind(`%${data}%`).all();
     if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
@@ -449,10 +493,12 @@ async function searchBooks(env, chatId, command, data) {
 		total++;
 		message += `${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
 			`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
+			`${languages[lang]["issn"]}: ${book.issn}\n` +
 			`${languages[lang]["title"]}: ${book.title}\n` +
 			`${languages[lang]["authors"]}: ${book.authors}\n` +
 			`${languages[lang]["publisher"]}: ${book.publisher}\n` +
-			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n\n`;
+			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+			`${languages[lang]["isFavorite"]}: ${languages[lang][book.isFavorite]}\n\n`;
 		if ((total % batchSize === 0) || (i === results.length - 1)) {
 			if (i === results.length - 1) {
 				message += `${languages[lang]["totBmatched"]}: ${total}`;
@@ -465,27 +511,29 @@ async function searchBooks(env, chatId, command, data) {
 }
 
 /** 
- * Shows all the data about a specific book found by ISBN.
+ * Shows all the data about a specific book found by ISBN/ISSN.
  * 
  * @param {object} env - The environment object containing runtime information, such as bindings.
  * @param {number|string} chatId - The chat ID of the user who requested the service.
- * @param {string} isbn - The book ISBN10 or ISBN13.
+ * @param {string} code - The book ISBN10, ISBN13 or ISSN.
  * @returns {Promise<void>} This function does not return a value.
  */
-async function showBook(env, chatId, isbn) {
-	let finalIsbn10 = (isbn && await isValidISBN10(isbn)) ? isbn : "";
-    let finalIsbn13 = (isbn && await isValidISBN13(isbn)) ? isbn : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13) {
-		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ?")
-									.bind(finalIsbn13).all();
+async function showBook(env, chatId, code) {
+	let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
+    let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
+    if (finalIsbn13 || await isValidISSN(code)) {
+		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
+									.bind(finalIsbn13, code).all();
 		if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
 		let message = `${languages[lang]["bookFound"]}\n` + 
 			`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 			`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+			`${languages[lang]["issn"]}: ${results[0].issn}\n` +
 			`${languages[lang]["title"]}: ${results[0].title}\n` +
 			`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 			`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
 			`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` +
+			`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n` +
 			`${languages[lang]["pageCount"]}: ${results[0].pageCount}\n` +
 			`${languages[lang]["textSnippet"]}: ${results[0].textSnippet}\n` + 
 			`${languages[lang]["description"]}: ${results[0].description}\n` +
