@@ -79,6 +79,7 @@ They can do nothing. If you want everyone able to do read only operations remove
 # 🛠️ To do 
 - Search books by published date.
 - Web interface (mini app).
+- A command to show all books.
 
 # 💭 Discussion 
 For any comment or to request a new feature you can either use the [Discussions](https://github.com/Mqtth3w/library-Telegram-bot/discussions) section or contact me through the [bot](https://t.me/Mqtth3w_support_bot).
