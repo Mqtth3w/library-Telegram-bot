@@ -333,7 +333,7 @@ async function addBook(env, chatId, args) {
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
-					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, "", "false").run();
+					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, 0.0, "", "false").run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
 					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
 					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
