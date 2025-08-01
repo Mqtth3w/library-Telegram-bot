@@ -331,7 +331,7 @@ async function addBook(env, chatId, args) {
 			const title = args.substring(isbn.length).trim().replace(/\s+/g, "+");
 			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13, title);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
 					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, "", "false").run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
