@@ -47,7 +47,7 @@ It can handle 100k requests for free per day (Cloudflare limits).
 An admin can also run user commands.
 - `/add <ISBN10 or ISBN13> <Optionally the book's title>` adds the book to the DB by taking the data from Google books API or Open Library API. It shows also the added book's data. *A query with also the title has more probability of success*.
 -  `/del <ISBN10, ISBN13 or ISSN>` removes the book from the DB.
--  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>;<price>;<issn>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don't want to specify it (e.g. ;1234567890123;Hello;;;;;;;;room a, library 3;;;).
+-  `/addmanually <isbn10>;<isbn13>;<title>;<authors>;<publisher>;<publishedDate>;<pageCount>;<textSnippet>;<description>;<language>;<location>;<thumbnail (image cover link)>;<price>;<issn><is favorite>` adds the book with all the specified data. Don't use ";" in fileds. Leave empty a field if you don't want to specify it (e.g. ;1234567890123;Hello;;;;;;;;room a, library 3;;;;).
 -  `/settitle <ISBN10, ISBN13 or ISSN> <New book's title>` changes the book's title to the specified.
 -  `/setauthors <ISBN10, ISBN13 or ISSN> <New book's authors>` changes the book's authors to the specified.
 -  `/setpublisher <ISBN10, ISBN13 or ISSN> <New book's publisher>` changes the book's publisher to the specified.
