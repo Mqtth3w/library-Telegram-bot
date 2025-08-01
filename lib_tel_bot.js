@@ -199,7 +199,7 @@ async function fetchBookData(env, isbn, title) {
 			isbn10: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_10")?.identifier || "",
 			isbn13: bookInfo.industryIdentifiers?.find(i => i.type === "ISBN_13")?.identifier || "",
 			title: bookInfo.title || "",
-			authors: bookInfo.authors.join(", ") || "",
+			authors: bookInfo.authors?.join(", ") || "",
 			publisher: bookInfo.publisher || "",
 			publishedDate: bookInfo.publishedDate || "",
 			pageCount: bookInfo.pageCount || "",
