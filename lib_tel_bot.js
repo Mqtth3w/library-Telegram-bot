@@ -337,12 +337,12 @@ async function addBook(env, chatId, args) {
 			let message = `${languages[lang]["bookAdded"]}\n` + 
 					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
 					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
-					`${languages[lang]["issn"]}: ${book.issn}\n` +
+					`${languages[lang]["issn"]}: \n` +
 					`${languages[lang]["title"]}: ${book.title}\n` +
 					`${languages[lang]["authors"]}: ${book.authors}\n` +
 					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
 					`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
-					`${languages[lang]["isFavorite"]}: ${languages[lang][book.isFavorite]}\n` +
+					`${languages[lang]["isFavorite"]}: false\n` +
 					`${languages[lang]["pageCount"]}: ${book.pageCount}\n` +
 					`${languages[lang]["textSnippet"]}: ${book.textSnippet}\n` + 
 					`${languages[lang]["description"]}: ${book.description}\n` +
@@ -580,3 +580,4 @@ async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
 }
+
