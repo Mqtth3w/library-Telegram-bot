@@ -386,7 +386,7 @@ async function addManually(env, chatId, args) {
     let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
 	if (finalIsbn13 || await isValidISSN(issn)) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
-								.bind(finalIsbn13, issn).all();
+								.bind(finalIsbn13, issn || "-1").all();
 		if (results.length > 0) {
 			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
@@ -580,5 +580,3 @@ async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
 }
-
-
