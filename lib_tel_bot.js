@@ -402,7 +402,7 @@ async function addManually(env, chatId, args) {
 			let pages = Number(pageCount);
 			if (isNaN(pages) || pages <= 0) pages = 1;
 			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", pages, textSnippet || "", 
+			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", pages || "", textSnippet || "", 
 				description || "", language || "", location || "", thumbnail || "", price || "", issn || "", isfav || "false").run();
 			await sendMessage(env, chatId, `${languages[lang]["bookAdded"]}`);
 		}
@@ -579,4 +579,5 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
+
 }
