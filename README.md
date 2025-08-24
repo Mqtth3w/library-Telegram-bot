@@ -61,6 +61,7 @@ An admin can also run user commands.
 -  `/setthumbnail <ISBN10, ISBN13 or ISSN> <Thumbnail image link>` changes the book's thumbnail to the specified.
 -  `/addfav <ISBN10, ISBN13 or ISSN>` adds the book to the favorites.
 -  `/delfav <ISBN10, ISBN13 or ISSN>` removes the book from the favorites.
+-  `/setcatgs <ISBN10, ISBN13 or ISSN> <categories>` changes the book's categories to the specified.
 
 ### 😊 User
 - Send any text message to search for  books by title in DB.
@@ -72,6 +73,7 @@ An admin can also run user commands.
 -  `/searchauthor <Author name>` shows books in DB by the author name.
 -  `/searchpublisher <Publisher name>` shows books in DB by the publisher name.
 -  `/showfav` shows all favorite books.
+-  `/searchcatgs <categories>` shows books in DB by the categories.
 
 ### 😭 Others
 They can do nothing. If you want everyone able to do read only operations remove the users check ("export default" zone).
@@ -93,3 +95,4 @@ Donate to support my projects.
 
 # ⭐ Give a Star!
 Support this project by giving it a star. Thanks!
+
