@@ -4,7 +4,7 @@
 - Create a new database. the name doesn't really matter. Instead could be useful to set a location near to "you".
 - Select the database and create a new table called "books" with the following columns and types:
     - isbn10: text.
-    - isbn13: text. Set it as primary key.
+    - isbn13: text.
     - title: text.
     - authors: text.
     - publisher: text.
