@@ -52,7 +52,8 @@ const languages = {
 	"thumbnail": "Immagine miniatura",
 	"isFavorite": "Nei preferiti",
 	"true": "Si",
-	"false": "No"
+	"false": "No",
+	"categories": "Categorie"
   },
   "en": {
     "start": "Hello, welcome to the library!",
@@ -91,7 +92,8 @@ const languages = {
 	"thumbnail": "Thumbnail image",
 	"isFavorite": "In favorites",
 	"true": "Yes",
-	"false": "No"
+	"false": "No",
+	"categories": "Categories"
   }
   // You can add other languages here...
 };
@@ -158,7 +160,7 @@ export default {
 				}
 			}
 		}
-    return new Response("OK", { status: 200 });
+		return new Response("OK", { status: 200 });
   },
 };
 
@@ -206,7 +208,8 @@ async function fetchBookData(env, isbn, title) {
 			textSnippet: bookInfo.searchInfo?.textSnippet || "",
 			description: bookInfo.description || "",
 			language: bookInfo.language || "",
-			thumbnail: bookInfo.imageLinks?.thumbnail || ""
+			thumbnail: bookInfo.imageLinks?.thumbnail || "",
+			categories: bookInfo.categories?.join(", ") || ""
 		};
 	}
 	// The genius behind OpenLibrary decided it should return an HTML page when a book isn't found.
@@ -229,6 +232,7 @@ async function fetchBookData(env, isbn, title) {
 				description: "",
 				language: dataOpenLibrary.languages?.map(l => l.key.split("/").pop()).join(", ") || "",
 				thumbnail: "",
+				categories: ""
 			};
 		}
 	}
@@ -324,6 +328,7 @@ async function addBook(env, chatId, args) {
 							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
 							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` +
+							`${languages[lang]["categories"]}: ${results[0].categories}\n` +
 							`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n\n`;
 			await sendMessage(env, chatId, message);
 		}
@@ -331,9 +336,9 @@ async function addBook(env, chatId, args) {
 			const title = args.substring(isbn.length).trim().replace(/\s+/g, "+");
 			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13, title);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
-					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, 0.0, "", "false").run();
+					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, 0.0, "", "false", book.categories).run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
 					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
 					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
@@ -342,6 +347,7 @@ async function addBook(env, chatId, args) {
 					`${languages[lang]["authors"]}: ${book.authors}\n` +
 					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
 					`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+					`${languages[lang]["categories"]}: ${book.categories}\n` +
 					`${languages[lang]["isFavorite"]}: ${languages[lang]["false"]}\n` +
 					`${languages[lang]["pageCount"]}: ${book.pageCount}\n` +
 					`${languages[lang]["textSnippet"]}: ${book.textSnippet}\n` + 
@@ -381,7 +387,7 @@ async function deleteBook(env, chatId, code) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function addManually(env, chatId, args) {
-    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price, issn, isfav] = args.split(";");
+    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price, issn, isfav, categories] = args.split(";");
 	let finalIsbn10 = (isbn10 && await isValidISBN10(isbn10)) ? isbn10 : "";
     let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
 	if (finalIsbn13 || await isValidISSN(issn)) {
@@ -396,14 +402,15 @@ async function addManually(env, chatId, args) {
 							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
 							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` + 
+							`${languages[lang]["categories"]}: ${results[0].categories}\n` +
 							`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n\n`;
 			await sendMessage(env, chatId, message);
 		} else {
 			let pages = Number(pageCount);
 			if (isNaN(pages) || pages <= 0) pages = 1;
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", pages || "", textSnippet || "", 
-				description || "", language || "", location || "", thumbnail || "", price || "", issn || "", isfav || "false").run();
+				description || "", language || "", location || "", thumbnail || "", price || "", issn || "", isfav || "false", categories || "").run();
 			await sendMessage(env, chatId, `${languages[lang]["bookAdded"]}`);
 		}
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -437,7 +444,8 @@ async function updateBook(env, chatId, command, args) {
 			"/setprice": "price",
 			"/setthumbnail": "thumbnail",
 			"/addfav": "isFavorite",
-			"/delfav": "isFavorite"
+			"/delfav": "isFavorite",
+			"/setcatgs": "categories"
 		};
 		if (!fieldMap[command]) {
 			return await sendMessage(env, chatId, `${languages[lang]["invalidcmd"]}`);
@@ -480,9 +488,10 @@ async function searchBooks(env, chatId, command, data) {
 			"/searchauthor": "authors",
 			"/searchpublisher": "publisher",
 			"/searchtitle": "title",
-			"/showfav": "isFavorite"
+			"/showfav": "isFavorite",
+			"/searchcatgs": "categories"
 		};
-    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, title, authors, publisher, publishedDate, isFavorite FROM books WHERE ${fieldMap[command]} LIKE ?`)
+    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, title, authors, publisher, publishedDate, categories, isFavorite FROM books WHERE ${fieldMap[command]} LIKE ?`)
 								.bind(`%${data}%`).all();
     if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
@@ -498,6 +507,8 @@ async function searchBooks(env, chatId, command, data) {
 			`${languages[lang]["authors"]}: ${book.authors}\n` +
 			`${languages[lang]["publisher"]}: ${book.publisher}\n` +
 			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
+			`${languages[lang]["categories"]}: ${book.categories}\n` +
 			`${languages[lang]["isFavorite"]}: ${languages[lang][book.isFavorite]}\n\n`;
 		if ((total % batchSize === 0) || (i === results.length - 1)) {
 			if (i === results.length - 1) {
@@ -533,6 +544,7 @@ async function showBook(env, chatId, code) {
 			`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 			`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
 			`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` +
+			`${languages[lang]["categories"]}: ${results[0].categories}\n` +
 			`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n` +
 			`${languages[lang]["pageCount"]}: ${results[0].pageCount}\n` +
 			`${languages[lang]["textSnippet"]}: ${results[0].textSnippet}\n` + 
@@ -579,5 +591,4 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
-
 }
