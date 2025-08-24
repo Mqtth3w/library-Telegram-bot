@@ -496,7 +496,7 @@ async function searchBooks(env, chatId, command, data) {
     if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
 	let message = "";
-	const batchSize = 25;
+	const batchSize = 5;
 	for (let i = 0; i < results.length; i++) {
 		const book = results[i];
 		total++;
@@ -591,4 +591,5 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
+
 }
