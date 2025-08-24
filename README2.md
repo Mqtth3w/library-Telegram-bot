@@ -18,6 +18,7 @@
     - price: text.
     - issn: text.
     - isFavorite: text.
+    - categories: text.
 
 - With the worker selected, go to settings and then bindings. Click add, click D1 database, choose the variable name "db" and select your database by the name you set previously. Then deploy it.
 
