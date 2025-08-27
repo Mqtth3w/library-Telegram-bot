@@ -151,8 +151,7 @@ export default {
 						else if (command === "/count") await countBooks(env, chatId);
 						else if (command === "/pagecount") await countPages(env, chatId);
 						else if (command === "/totalvalue") await totValue(env, chatId);
-						else if (command === "/searchauthor") await searchBooks(env, chatId, command, args);
-						else if (command === "/searchpublisher") await searchBooks(env, chatId, command, args);
+						else if (command.startsWith("/search")) await searchBooks(env, chatId, command, args);
 						else if (command === "/showfav") await searchBooks(env, chatId, command, "true");
 						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
 						else await sendMessage(env, chatId, languages[lang]["incorrectUsage"]);
@@ -591,5 +590,4 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
-
 }
