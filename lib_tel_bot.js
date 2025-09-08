@@ -13,7 +13,7 @@ const users = ["1265456"];
 
 
 const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
-const lang = "it"; //SET YOURS
+const lang = "en"; //SET YOURS
 const languages = {
   "it": {
     "start": "Ciao, benvenuto nella biblioteca!",
@@ -490,7 +490,7 @@ async function searchBooks(env, chatId, command, data) {
 			"/showfav": "isFavorite",
 			"/searchcatgs": "categories"
 		};
-    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, title, authors, publisher, publishedDate, categories, isFavorite FROM books WHERE ${fieldMap[command]} LIKE ?`)
+    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, title, authors, publisher, publishedDate, categories, isFavorite FROM books WHERE LOWER(${fieldMap[command]}) LIKE LOWER(?)`)
 								.bind(`%${data}%`).all();
     if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
@@ -590,4 +590,5 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
+
 }
