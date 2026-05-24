@@ -376,7 +376,7 @@ async function deleteBook(env, chatId, code) {
     let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
-		await env.db.prepare("DELETE FROM books WHERE isbn13 = ? OR issn = ? OR handCode = ?").bind(finalIsbn13, code, code).run();
+		await env.db.prepare("DELETE FROM books WHERE isbn13 = ? OR issn = ?").bind(finalIsbn13, code).run();
 		await sendMessage(env, chatId, `${languages[lang]["bookDeleted"]}`);
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
@@ -400,8 +400,8 @@ async function addManually(env, chatId, args) {
 			finalIsbn10 = handCode;
 			issn = handCode;
 		}
-		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ? OR handCode = ?")
-								.bind(finalIsbn13, issn || "-1", handCode || "-1").all();
+		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
+								.bind(finalIsbn13, issn || "-1").all();
 		if (results.length > 0) {
 			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
@@ -478,8 +478,8 @@ async function updateBook(env, chatId, command, args) {
 		} else if (command === "/delfav") {
 			newValue = "false";
 		}
-		await env.db.prepare(`UPDATE books SET ${fieldMap[command]} = ? WHERE isbn13 = ? OR issn = ? OR handCode = ?`)
-			.bind(newValue, finalIsbn13, code, code).run();
+		await env.db.prepare(`UPDATE books SET ${fieldMap[command]} = ? WHERE isbn13 = ? OR issn = ?`)
+			.bind(newValue, finalIsbn13, code).run();
 		await sendMessage(env, chatId, `${languages[lang]["update"]}`);
     } else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
 }
@@ -543,8 +543,8 @@ async function showBook(env, chatId, code) {
 	let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
     if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
-		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ? OR handCode = ?")
-									.bind(finalIsbn13, code, code).all();
+		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
+									.bind(finalIsbn13, code).all();
 		if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
 		let message = `${languages[lang]["bookFound"]}\n` + 
 			`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
