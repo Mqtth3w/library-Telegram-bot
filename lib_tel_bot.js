@@ -13,7 +13,7 @@ const users = ["1265456"];
 
 
 const userGuide = "https://github.com/Mqtth3w/library-Telegram-bot#-user-guide"
-const lang = "en"; //SET YOURS
+const lang = "it"; //SET YOURS
 const languages = {
   "it": {
     "start": "Ciao, benvenuto nella biblioteca!",
@@ -53,6 +53,7 @@ const languages = {
 	"isFavorite": "Nei preferiti",
 	"true": "Si",
 	"false": "No",
+	"handCode": "Codice a mano",
 	"categories": "Categorie"
   },
   "en": {
@@ -93,6 +94,7 @@ const languages = {
 	"isFavorite": "In favorites",
 	"true": "Yes",
 	"false": "No",
+	"handCode": "Hand Code",
 	"categories": "Categories"
   }
   // You can add other languages here...
@@ -159,7 +161,7 @@ export default {
 				}
 			}
 		}
-		return new Response("OK", { status: 200 });
+    return new Response("OK", { status: 200 });
   },
 };
 
@@ -323,6 +325,7 @@ async function addBook(env, chatId, args) {
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
 							`${languages[lang]["issn"]}: ${results[0].issn}\n` +
+							`${languages[lang]["handCode"]}: ${results[0].handCode}\n` +
 							`${languages[lang]["title"]}: ${results[0].title}\n` +
 							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
@@ -335,13 +338,14 @@ async function addBook(env, chatId, args) {
 			const title = args.substring(isbn.length).trim().replace(/\s+/g, "+");
 			const book = await fetchBookData(env, finalIsbn10 ? isbn : finalIsbn13, title);
 			if (!book) return await sendMessage(env, chatId, `${languages[lang]["bookNotFound"]}`);
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 				.bind(book.isbn10 || finalIsbn10, book.isbn13 || finalIsbn13, book.title, book.authors, book.publisher, book.publishedDate, 
-					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, 0.0, "", "false", book.categories).run();
+					book.pageCount, book.textSnippet, book.description, book.language, "", book.thumbnail, 0.0, "", "false", "", book.categories).run();
 			let message = `${languages[lang]["bookAdded"]}\n` + 
 					`${languages[lang]["isbn10"]}: ${book.isbn10 || finalIsbn10}\n` +
 					`${languages[lang]["isbn13"]}: ${book.isbn13 || finalIsbn13}\n` +
 					`${languages[lang]["issn"]}: \n` +
+					`${languages[lang]["handCode"]}: \n` +
 					`${languages[lang]["title"]}: ${book.title}\n` +
 					`${languages[lang]["authors"]}: ${book.authors}\n` +
 					`${languages[lang]["publisher"]}: ${book.publisher}\n` +
@@ -371,7 +375,7 @@ async function addBook(env, chatId, args) {
 async function deleteBook(env, chatId, code) {
     let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13 || await isValidISSN(code)) {
+    if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
 		await env.db.prepare("DELETE FROM books WHERE isbn13 = ? OR issn = ?").bind(finalIsbn13, code).run();
 		await sendMessage(env, chatId, `${languages[lang]["bookDeleted"]}`);
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -386,30 +390,37 @@ async function deleteBook(env, chatId, code) {
  * @returns {Promise<void>} This function does not return a value.
  */
 async function addManually(env, chatId, args) {
-    const [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price, issn, isfav, categories] = args.split(";");
+    let [isbn10, isbn13, title, authors, publisher, publishedDate, pageCount, textSnippet, description, language, location, thumbnail, price, issn, isfav, handCode, categories] = args.split(";");
+	//await sendMessage(env, chatId, `isbn10 ${isbn10}\n, isbn13 ${isbn13}\n, title ${title}\n, authors ${authors}\n, publisher ${publisher}\n, publishedDate ${publishedDate}\n, pageCount ${pageCount}\n, textSnippet ${textSnippet}\n, description ${description}\n, language ${language}\n, location ${location}\n, thumbnail ${thumbnail}\n, price ${price}\n, issn ${issn}\n, isfav ${isfav}\n, handCode ${handCode}`);
 	let finalIsbn10 = (isbn10 && await isValidISBN10(isbn10)) ? isbn10 : "";
     let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-	if (finalIsbn13 || await isValidISSN(issn)) {
+	if (finalIsbn13 || await isValidISSN(issn) || (Number(handCode) === Number(handCode) && handCode != "")) {
+		if (Number(handCode) === Number(handCode) && handCode != "") {
+			finalIsbn13 = handCode;
+			finalIsbn10 = handCode;
+			issn = handCode;
+		}
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
 								.bind(finalIsbn13, issn || "-1").all();
 		if (results.length > 0) {
 			let message = `${languages[lang]["alreadyPresent"]}\n` +
 							`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 							`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
+							`${languages[lang]["handCode"]}: ${results[0].handCode}\n` +
 							`${languages[lang]["issn"]}: ${results[0].issn}\n` +
 							`${languages[lang]["title"]}: ${results[0].title}\n` +
 							`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 							`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
 							`${languages[lang]["publishedDate"]}: ${results[0].publishedDate}\n` + 
-							`${languages[lang]["categories"]}: ${results[0].categories}\n` +
+							`${languages[lang]["categories"]}: ${results[0].categories}\n` + 
 							`${languages[lang]["isFavorite"]}: ${languages[lang][results[0].isFavorite]}\n\n`;
 			await sendMessage(env, chatId, message);
 		} else {
 			let pages = Number(pageCount);
 			if (isNaN(pages) || pages <= 0) pages = 1;
-			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+			await env.db.prepare("INSERT INTO books VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 			.bind(finalIsbn10, finalIsbn13, title || "", authors || "", publisher || "", publishedDate || "", pages || "", textSnippet || "", 
-				description || "", language || "", location || "", thumbnail || "", price || "", issn || "", isfav || "false", categories || "").run();
+				description || "", language || "it", location || "", thumbnail || "", price || "", issn || "", isfav || "false", handCode || "", categories || "").run();
 			await sendMessage(env, chatId, `${languages[lang]["bookAdded"]}`);
 		}
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -429,7 +440,7 @@ async function updateBook(env, chatId, command, args) {
 	newValue = newValue.join(" ");
     let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13 || await isValidISSN(code)) {
+    if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
 		const fieldMap = {
 			"/settitle": "title",
 			"/setauthors": "authors",
@@ -444,7 +455,7 @@ async function updateBook(env, chatId, command, args) {
 			"/setthumbnail": "thumbnail",
 			"/addfav": "isFavorite",
 			"/delfav": "isFavorite",
-			"/setcatgs": "categories"
+			"/setcategs": "categories"
 		};
 		if (!fieldMap[command]) {
 			return await sendMessage(env, chatId, `${languages[lang]["invalidcmd"]}`);
@@ -488,9 +499,9 @@ async function searchBooks(env, chatId, command, data) {
 			"/searchpublisher": "publisher",
 			"/searchtitle": "title",
 			"/showfav": "isFavorite",
-			"/searchcatgs": "categories"
+			"/searchcatgs": "categories",
 		};
-    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, title, authors, publisher, publishedDate, categories, isFavorite FROM books WHERE LOWER(${fieldMap[command]}) LIKE LOWER(?)`)
+    const { results } = await env.db.prepare(`SELECT isbn10, isbn13, issn, handCode, title, authors, publisher, publishedDate, categories, isFavorite FROM books WHERE LOWER(${fieldMap[command]}) LIKE LOWER(?)`)
 								.bind(`%${data}%`).all();
     if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
     let total = 0;
@@ -502,10 +513,10 @@ async function searchBooks(env, chatId, command, data) {
 		message += `${languages[lang]["isbn10"]}: ${book.isbn10}\n` +
 			`${languages[lang]["isbn13"]}: ${book.isbn13}\n` +
 			`${languages[lang]["issn"]}: ${book.issn}\n` +
+			`${languages[lang]["handCode"]}: ${book.handCode}\n` +
 			`${languages[lang]["title"]}: ${book.title}\n` +
 			`${languages[lang]["authors"]}: ${book.authors}\n` +
 			`${languages[lang]["publisher"]}: ${book.publisher}\n` +
-			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
 			`${languages[lang]["publishedDate"]}: ${book.publishedDate}\n` +
 			`${languages[lang]["categories"]}: ${book.categories}\n` +
 			`${languages[lang]["isFavorite"]}: ${languages[lang][book.isFavorite]}\n\n`;
@@ -531,7 +542,7 @@ async function searchBooks(env, chatId, command, data) {
 async function showBook(env, chatId, code) {
 	let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13 || await isValidISSN(code)) {
+    if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
 									.bind(finalIsbn13, code).all();
 		if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
@@ -539,6 +550,7 @@ async function showBook(env, chatId, code) {
 			`${languages[lang]["isbn10"]}: ${results[0].isbn10}\n` +
 			`${languages[lang]["isbn13"]}: ${results[0].isbn13}\n` +
 			`${languages[lang]["issn"]}: ${results[0].issn}\n` +
+			`${languages[lang]["handCode"]}: ${results[0].handCode}\n` +
 			`${languages[lang]["title"]}: ${results[0].title}\n` +
 			`${languages[lang]["authors"]}: ${results[0].authors}\n` +
 			`${languages[lang]["publisher"]}: ${results[0].publisher}\n` +
@@ -590,5 +602,4 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
-
 }
