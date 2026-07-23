@@ -27,6 +27,7 @@ const languages = {
     "bookNotFound": "Il libro non è stato trovato",
 	"totBooks": "Libri totali",
 	"totPrice": "Valore totale",
+	"maxHandCode": "Codice a mano più alto",
 	"totBmatched": "Totale libri abbinati",
 	"newVal": "Per aggiornare devi fornire un nuovo valore",
 	"invalidcmd": "Comando non valido",
@@ -68,6 +69,7 @@ const languages = {
     "bookNotFound": "Book not found",
 	"totBooks": "Total books",
 	"totPrice": "Total value",
+	"maxHandCode": "Highest hand code",
 	"totBmatched": "Total books matched",
 	"newVal": "To update you need to provide a new value",
 	"invalidcmd": "Invalid command",
@@ -94,7 +96,7 @@ const languages = {
 	"isFavorite": "In favorites",
 	"true": "Yes",
 	"false": "No",
-	"handCode": "Hand Code",
+	"handCode": "Hand code",
 	"categories": "Categories"
   }
   // You can add other languages here...
@@ -153,6 +155,7 @@ export default {
 						else if (command === "/count") await countBooks(env, chatId);
 						else if (command === "/pagecount") await countPages(env, chatId);
 						else if (command === "/totalvalue") await totValue(env, chatId);
+						else if (command === "/getmaxhc") await getMaxHandCode(env, chatId);
 						else if (command.startsWith("/search")) await searchBooks(env, chatId, command, args);
 						else if (command === "/showfav") await searchBooks(env, chatId, command, "true");
 						else if (text) await searchBooks(env, chatId, "/searchtitle", text);
@@ -375,7 +378,7 @@ async function addBook(env, chatId, args) {
 async function deleteBook(env, chatId, code) {
     let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
+    if (finalIsbn13 || await isValidISSN(code) || (Number.isInteger(Number(code)) && code.trim() != "")) {
 		await env.db.prepare("DELETE FROM books WHERE isbn13 = ? OR issn = ?").bind(finalIsbn13, code).run();
 		await sendMessage(env, chatId, `${languages[lang]["bookDeleted"]}`);
 	} else await sendMessage(env, chatId, `${languages[lang]["isbnError"]}`);
@@ -394,7 +397,7 @@ async function addManually(env, chatId, args) {
 	//await sendMessage(env, chatId, `isbn10 ${isbn10}\n, isbn13 ${isbn13}\n, title ${title}\n, authors ${authors}\n, publisher ${publisher}\n, publishedDate ${publishedDate}\n, pageCount ${pageCount}\n, textSnippet ${textSnippet}\n, description ${description}\n, language ${language}\n, location ${location}\n, thumbnail ${thumbnail}\n, price ${price}\n, issn ${issn}\n, isfav ${isfav}\n, handCode ${handCode}`);
 	let finalIsbn10 = (isbn10 && await isValidISBN10(isbn10)) ? isbn10 : "";
     let finalIsbn13 = (isbn13 && await isValidISBN13(isbn13)) ? isbn13 : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-	if (finalIsbn13 || await isValidISSN(issn) || (Number(handCode) === Number(handCode) && handCode != "")) {
+	if (finalIsbn13 || await isValidISSN(issn) || (Number.isInteger(Number(handCode)) && handCode.trim() != "")) {
 		if (Number(handCode) === Number(handCode) && handCode != "") {
 			finalIsbn13 = handCode;
 			finalIsbn10 = handCode;
@@ -440,7 +443,7 @@ async function updateBook(env, chatId, command, args) {
 	newValue = newValue.join(" ");
     let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
+    if (finalIsbn13 || await isValidISSN(code) || (Number.isInteger(Number(code)) && code.trim() != "")) {
 		const fieldMap = {
 			"/settitle": "title",
 			"/setauthors": "authors",
@@ -542,7 +545,7 @@ async function searchBooks(env, chatId, command, data) {
 async function showBook(env, chatId, code) {
 	let finalIsbn10 = (code && await isValidISBN10(code)) ? code : "";
     let finalIsbn13 = (code && await isValidISBN13(code)) ? code : (finalIsbn10 ? await convertISBN10toISBN13(finalIsbn10) : "");
-    if (finalIsbn13 || await isValidISSN(code) || (Number(code) === Number(code) && code != "")) {
+    if (finalIsbn13 || await isValidISSN(code) || (Number.isInteger(Number(code)) && code.trim() != "")) {
 		const { results } = await env.db.prepare("SELECT * FROM books WHERE isbn13 = ? OR issn = ?")
 									.bind(finalIsbn13, code).all();
 		if (results.length === 0) return await sendMessage(env, chatId, `${languages[lang]["noBooks"]}`);
@@ -602,4 +605,16 @@ async function countPages(env, chatId) {
 async function totValue(env, chatId) {
 	const { results } = await env.db.prepare(`SELECT SUM(CAST(price AS FLOAT)) AS tot FROM books`).all();
 	await sendMessage(env, chatId, `${languages[lang]["totPrice"]}: ${results[0]["tot"]}`);
+}
+
+/** 
+ * Get the highest value for handCode in DB.
+ * 
+ * @param {object} env - The environment object containing runtime information, such as bindings.
+ * @param {number|string} chatId - The chat ID of the user who requested the service.
+ * @returns {Promise<void>} This function does not return a value.
+ */
+async function getMaxHandCode(env, chatId) {
+	const { results } = await env.db.prepare(`SELECT MAX(CAST(handCode AS INTEGER)) AS maxHandCode FROM books`).all();
+	await sendMessage(env, chatId, `${languages[lang]["maxHandCode"]}: ${results[0]["maxHandCode"]}`);
 }
