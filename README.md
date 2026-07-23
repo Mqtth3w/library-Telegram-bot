@@ -74,6 +74,7 @@ An admin can also run user commands.
 -  `/searchpublisher <Publisher name>` shows books in DB by the publisher name.
 -  `/showfav` shows all favorite books.
 -  `/searchcatgs <categories>` shows books in DB by the categories.
+-  `/getmaxhc` returns the highest hand code number.
 
 ### 😭 Others
 They can do nothing. If you want everyone able to do read only operations remove the users check ("export default" zone).
